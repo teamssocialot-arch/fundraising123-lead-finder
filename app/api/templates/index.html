@@ -9,7 +9,8 @@
   <div class="stat-card"><div class="value">{{ stats.live_auctions }}</div><div class="label">Live Auctions</div></div>
   <div class="stat-card"><div class="value">{{ stats.galas }}</div><div class="label">Galas</div></div>
   <div class="stat-card"><div class="value">{{ stats.golf_fundraisers }}</div><div class="label">Golf Fundraisers</div></div>
-  <div class="stat-card"><div class="value">{{ stats.verified_emails }}</div><div class="label">Verified Emails</div></div>
+  <div class="stat-card"><div class="value">{{ stats.verified_emails }}</div><div class="label">Verified Emails (page-confirmed)</div></div>
+  <div class="stat-card"><div class="value">{{ stats.unverified_emails }}</div><div class="label">Unverified Emails (snippet-only)</div></div>
   <div class="stat-card"><div class="value">{{ stats.general_emails }}</div><div class="label">General Emails</div></div>
   <div class="stat-card"><div class="value">{{ stats.contacts_missing_email }}</div><div class="label">Contacts Missing Email</div></div>
 </div>
@@ -71,7 +72,7 @@
     <tr>
       <th>Event</th><th>Organization</th><th>Date</th><th>Timing</th><th>Location</th>
       <th>Type</th><th>Silent</th><th>Live</th><th>Gala</th><th>Golf</th>
-      <th>Contact</th><th>Email</th><th>Verification</th>
+      <th>Contact</th><th>Email</th><th>Verification</th><th>Source Level</th>
     </tr>
   </thead>
   <tbody>
@@ -91,9 +92,10 @@
       <td>{% if c and c.first_name %}{{ c.first_name }} {{ c.last_name }}{% else %}-{% endif %}</td>
       <td>{% if c and c.email %}{{ c.email }}{% else %}NOT FOUND{% endif %}</td>
       <td><span class="badge badge-{{ 'verified' if e.verification_status == 'VERIFIED' else ('partial' if e.verification_status == 'PARTIALLY_VERIFIED' else 'review') }}">{{ e.verification_status }}</span></td>
+      <td><span class="badge badge-{{ 'verified' if e.source_verification_level == 'SOURCE_PAGE_VERIFIED' else ('partial' if e.source_verification_level == 'SEARCH_RESULT_SUPPORTED' else 'review') }}">{{ e.source_verification_level }}</span></td>
     </tr>
     {% else %}
-    <tr><td colspan="13">No leads match these filters yet.</td></tr>
+    <tr><td colspan="14">No leads match these filters yet.</td></tr>
     {% endfor %}
   </tbody>
 </table>

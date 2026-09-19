@@ -28,16 +28,28 @@ def main():
     print(f"Live auctions (YES):     {count(lambda e: e.live_auction == 'YES')}")
     print(f"Galas (YES):             {count(lambda e: e.gala == 'YES')}")
     print(f"Golf tournaments (YES):  {count(lambda e: e.golf_tournament == 'YES')}")
-    print(f"Verified events:         {count(lambda e: e.verification_status == 'VERIFIED')}")
-    print(f"Partially verified:      {count(lambda e: e.verification_status == 'PARTIALLY_VERIFIED')}")
+    print(f"Record-complete (VERIFIED, i.e. state/date/website/url/city present): {count(lambda e: e.verification_status == 'VERIFIED')}")
+    print(f"Partially complete:      {count(lambda e: e.verification_status == 'PARTIALLY_VERIFIED')}")
     print(f"Needs review:            {count(lambda e: e.verification_status == 'NEEDS_REVIEW')}")
+    print()
+    print("Source verification level (how facts were actually confirmed) -- EVENTS:")
+    for level in ("SOURCE_PAGE_VERIFIED", "SEARCH_RESULT_SUPPORTED", "UNVERIFIED", "NOT_FOUND"):
+        print(f"  {level:26s} {count(lambda e, level=level: e.source_verification_level == level)}")
 
     verified_public = sum(1 for c in contacts if c.email_type == "VERIFIED_PUBLIC")
+    unverified_email = sum(1 for c in contacts if c.email_type == "UNVERIFIED")
     general_org = sum(1 for c in contacts if c.email_type == "GENERAL_ORGANIZATION")
     not_found = sum(1 for c in contacts if c.email_type == "NOT_FOUND")
-    print(f"Verified public emails:  {verified_public}")
-    print(f"General org emails:      {general_org}")
-    print(f"Contacts missing email:  {not_found}")
+    print()
+    print(f"Emails VERIFIED_PUBLIC (requires SOURCE_PAGE_VERIFIED): {verified_public}")
+    print(f"Emails UNVERIFIED (named, snippet-supported only):      {unverified_email}")
+    print(f"General org emails:                                     {general_org}")
+    print(f"Contacts missing email:                                 {not_found}")
+    print()
+    print("Source verification level -- CONTACTS:")
+    for level in ("SOURCE_PAGE_VERIFIED", "SEARCH_RESULT_SUPPORTED", "UNVERIFIED", "NOT_FOUND"):
+        n = sum(1 for c in contacts if c.source_verification_level == level)
+        print(f"  {level:26s} {n}")
     print()
 
     print("=" * 100)
@@ -45,24 +57,26 @@ def main():
     print("=" * 100)
     for e in events:
         org = session.get(Organization, e.organization_id)
-        c = session.query(Contact).filter(Contact.organization_id == org.organization_id).first()
+        org_contacts = session.query(Contact).filter(Contact.organization_id == org.organization_id).all()
         print(f"\n[{e.event_id}] {e.event_name}")
-        print(f"  Organization:       {org.organization_name}")
+        print(f"  Organization:       {org.organization_name} (org source level: {org.source_verification_level})")
         print(f"  Event date:         {e.event_date or 'UNKNOWN'}  ({e.timing_bucket or 'n/a'}, {e.days_until_event if e.days_until_event is not None else 'n/a'} days)")
         print(f"  Location:           {e.city}, {e.state}")
         print(f"  Event type:         {e.event_type}")
         print(f"  Silent/Live auction:{e.silent_auction} / {e.live_auction}")
         print(f"  Org website:        {org.website}")
         print(f"  Event URL:          {e.event_url}")
-        if c:
-            print(f"  Contact:            {c.first_name or ''} {c.last_name or ''} -- {c.title or 'n/a'}")
-            print(f"  Email:              {c.email or 'NOT FOUND'} ({c.email_type})")
-            print(f"  Phone:              {c.phone or 'NOT FOUND'}")
-            print(f"  Contact source URL: {c.contact_source_url}")
-            print(f"  Email source URL:   {c.email_source_url}")
+        print(f"  Event source level: {e.source_verification_level}")
+        if org_contacts:
+            for c in org_contacts:
+                print(f"  Contact:            {c.first_name or ''} {c.last_name or ''} -- {c.title or 'n/a'}")
+                print(f"    Email:              {c.email or 'NOT FOUND'} ({c.email_type}, source level: {c.source_verification_level})")
+                print(f"    Phone:              {c.phone or 'NOT FOUND'}")
+                print(f"    Contact source URL: {c.contact_source_url}")
+                print(f"    Email source URL:   {c.email_source_url}")
         else:
             print("  Contact:            NONE FOUND")
-        print(f"  Verification status:{e.verification_status}")
+        print(f"  Record-completeness status: {e.verification_status}")
 
 
 if __name__ == "__main__":

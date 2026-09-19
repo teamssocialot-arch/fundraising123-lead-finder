@@ -57,6 +57,7 @@ def load_file(path: str):
             address=org_data.get("address"),
             phone=org_data.get("phone"),
             organization_type=org_data.get("organization_type"),
+            source_verification_level=org_data.get("source_verification_level", "UNVERIFIED"),
         )
         stats["organizations_created" if org_created else "organizations_deduped"] += 1
 
@@ -83,6 +84,7 @@ def load_file(path: str):
             travel_packages=event_data.get("travel_packages", "UNKNOWN"),
             sponsors=event_data.get("sponsors", "UNKNOWN"),
             discovery_source=event_data.get("discovery_source"),
+            source_verification_level=event_data.get("source_verification_level", "UNVERIFIED"),
         )
         stats["events_created" if event_created else "events_deduped"] += 1
 
@@ -100,6 +102,7 @@ def load_file(path: str):
                 contact_page_url=contact_data.get("contact_page_url"),
                 email_source_url=contact_data.get("email_source_url"),
                 contact_source_url=contact_data.get("contact_source_url"),
+                source_verification_level=contact_data.get("source_verification_level", "UNVERIFIED"),
             )
             stats["contacts_created"] += 1
             first_contact = first_contact or contact

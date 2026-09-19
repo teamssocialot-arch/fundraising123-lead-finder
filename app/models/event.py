@@ -52,7 +52,9 @@ class Event(Base):
     next_event = Column(String, nullable=True)  # date string or "NOT ANNOUNCED"
 
     discovery_source = Column(String, nullable=True)
-    verification_status = Column(String, default="NEEDS_REVIEW")  # VERIFIED / PARTIALLY_VERIFIED / NEEDS_REVIEW
+    verification_status = Column(String, default="NEEDS_REVIEW")  # VERIFIED / PARTIALLY_VERIFIED / NEEDS_REVIEW -- record completeness only
+    # SOURCE_PAGE_VERIFIED / SEARCH_RESULT_SUPPORTED / UNVERIFIED / NOT_FOUND -- how the event facts were actually confirmed
+    source_verification_level = Column(String, default="UNVERIFIED")
     lead_status = Column(String, default="NEW")
 
     notes = Column(Text, nullable=True)

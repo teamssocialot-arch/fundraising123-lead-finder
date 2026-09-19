@@ -26,6 +26,13 @@ ALLOWED_STATES = {
     "VT", "VA", "WA", "WV", "WI", "WY",
 }
 
+SOURCE_VERIFICATION_LEVELS = (
+    "SOURCE_PAGE_VERIFIED",    # the source page was actually fetched and the fact confirmed on it
+    "SEARCH_RESULT_SUPPORTED", # the fact appears in a search result/snippet; underlying page not fetched
+    "UNVERIFIED",              # could not be independently confirmed by either method
+    "NOT_FOUND",               # no information was found at all
+)
+
 TIMING_BUCKETS = [
     (0, 30, "0-30 days"),
     (31, 60, "31-60 days"),

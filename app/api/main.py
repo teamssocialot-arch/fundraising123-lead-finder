@@ -58,6 +58,7 @@ def dashboard(request: Request):
         "galas": sum(1 for e in all_events if e.gala == "YES"),
         "golf_fundraisers": sum(1 for e in all_events if e.golf_tournament == "YES"),
         "verified_emails": session.query(Contact).filter(Contact.email_type == "VERIFIED_PUBLIC").count(),
+        "unverified_emails": session.query(Contact).filter(Contact.email_type == "UNVERIFIED").count(),
         "general_emails": session.query(Contact).filter(Contact.email_type == "GENERAL_ORGANIZATION").count(),
         "contacts_missing_email": session.query(Contact).filter(Contact.email_type == "NOT_FOUND").count(),
     }
@@ -109,7 +110,8 @@ CSV_COLUMNS = [
     "Silent Auction", "Live Auction", "Gala", "Golf Tournament", "City", "State", "ZIP",
     "Contact First Name", "Contact Last Name", "Contact Title", "Email", "Email Type",
     "Phone", "Website", "Event URL", "Email Source URL", "Contact Source URL",
-    "Verification Status", "Lead Status", "Notes",
+    "Verification Status", "Event Source Verification Level", "Contact Source Verification Level",
+    "Lead Status", "Notes",
 ]
 
 
@@ -134,7 +136,9 @@ def export_csv(request: Request):
             contact.email_type if contact else "NOT_FOUND", contact.phone if contact else "",
             org.website or "", event.event_url or "",
             contact.email_source_url if contact else "", contact.contact_source_url if contact else "",
-            event.verification_status, event.lead_status, event.notes or "",
+            event.verification_status, event.source_verification_level,
+            contact.source_verification_level if contact else "NOT_FOUND",
+            event.lead_status, event.notes or "",
         ])
     session.close()
 

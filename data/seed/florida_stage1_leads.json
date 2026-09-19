@@ -7,7 +7,8 @@
       "state": "FL",
       "zip": "33266",
       "phone": "305-335-0894",
-      "organization_type": "childhood_cancer_nonprofit"
+      "organization_type": "childhood_cancer_nonprofit",
+      "source_verification_level": "SEARCH_RESULT_SUPPORTED"
     },
     "event": {
       "name": "Discovering Hope Gala & Silent Auction",
@@ -19,7 +20,8 @@
       "silent_auction": "YES",
       "live_auction": "UNKNOWN",
       "gala": "YES",
-      "discovery_source": "web_search: \"silent auction\" gala Florida 2026 nonprofit fundraiser"
+      "discovery_source": "web_search: \"silent auction\" gala Florida 2026 nonprofit fundraiser",
+      "source_verification_level": "SEARCH_RESULT_SUPPORTED"
     },
     "contacts": [
       {
@@ -27,11 +29,12 @@
         "last_name": "Ortiz",
         "title": "Executive Director",
         "email": "oscar@sebastianstrong.org",
-        "email_type": "VERIFIED_PUBLIC",
+        "email_type": "UNVERIFIED",
         "phone": "305-335-0894",
         "contact_page_url": "https://www.sebastianstrong.org/contacts/",
         "email_source_url": "https://www.sebastianstrong.org/contacts/",
-        "contact_source_url": "https://www.sebastianstrong.org/contacts/"
+        "contact_source_url": "https://www.sebastianstrong.org/contacts/",
+        "source_verification_level": "SEARCH_RESULT_SUPPORTED"
       }
     ],
     "sources": [
@@ -45,7 +48,8 @@
       "website": "https://www.jdch.com",
       "city": "Hollywood",
       "state": "FL",
-      "organization_type": "hospital_foundation"
+      "organization_type": "hospital_foundation",
+      "source_verification_level": "SEARCH_RESULT_SUPPORTED"
     },
     "event": {
       "name": "The Red Gala",
@@ -60,7 +64,8 @@
       "sponsors": "YES",
       "silent_auction": "UNKNOWN",
       "live_auction": "UNKNOWN",
-      "discovery_source": "web_search: \"annual gala\" nonprofit Miami 2026 auction"
+      "discovery_source": "web_search: \"annual gala\" nonprofit Miami 2026 auction",
+      "source_verification_level": "SEARCH_RESULT_SUPPORTED"
     },
     "contacts": [
       {
@@ -68,11 +73,12 @@
         "last_name": "Beltz",
         "title": "Manager of Special Events",
         "email": "ABeltz@mhs.net",
-        "email_type": "VERIFIED_PUBLIC",
+        "email_type": "UNVERIFIED",
         "phone": "954-265-7224",
         "contact_page_url": "https://www.jdch.com/give-back/foundation-events/the-red-gala",
         "email_source_url": "https://www.jdch.com/give-back/foundation-events/the-red-gala",
-        "contact_source_url": "https://www.jdch.com/give-back/foundation-events/the-red-gala"
+        "contact_source_url": "https://www.jdch.com/give-back/foundation-events/the-red-gala",
+        "source_verification_level": "SEARCH_RESULT_SUPPORTED"
       }
     ],
     "sources": [
@@ -87,7 +93,8 @@
       "city": "Tampa",
       "state": "FL",
       "phone": "813-221-8733",
-      "organization_type": "environmental_nonprofit"
+      "organization_type": "environmental_nonprofit",
+      "source_verification_level": "SEARCH_RESULT_SUPPORTED"
     },
     "event": {
       "name": "Tropical Nights",
@@ -102,7 +109,8 @@
       "live_auction": "YES",
       "raffle": "YES",
       "gala": "YES",
-      "discovery_source": "web_search: \"annual gala\" nonprofit Tampa 2026 auction"
+      "discovery_source": "web_search: \"annual gala\" nonprofit Tampa 2026 auction",
+      "source_verification_level": "SEARCH_RESULT_SUPPORTED"
     },
     "contacts": [
       {
@@ -111,7 +119,8 @@
         "title": "Executive Director",
         "email_type": "NOT_FOUND",
         "contact_page_url": "https://www.keeptampabaybeautiful.org/team",
-        "contact_source_url": "https://www.keeptampabaybeautiful.org/team"
+        "contact_source_url": "https://www.keeptampabaybeautiful.org/team",
+        "source_verification_level": "SEARCH_RESULT_SUPPORTED"
       },
       {
         "title": "General Inquiries",
@@ -120,7 +129,8 @@
         "phone": "813-221-8733",
         "contact_page_url": "https://www.keeptampabaybeautiful.org/contact",
         "email_source_url": "https://www.keeptampabaybeautiful.org/contact",
-        "contact_source_url": "https://www.keeptampabaybeautiful.org/contact"
+        "contact_source_url": "https://www.keeptampabaybeautiful.org/contact",
+        "source_verification_level": "SEARCH_RESULT_SUPPORTED"
       }
     ],
     "sources": [
@@ -138,7 +148,8 @@
       "state": "FL",
       "zip": "32960",
       "phone": "772-569-0760",
-      "organization_type": "senior_services_nonprofit"
+      "organization_type": "senior_services_nonprofit",
+      "source_verification_level": "SEARCH_RESULT_SUPPORTED"
     },
     "event": {
       "name": "11th Annual Charity Pro-Am Golf Tournament",
@@ -152,7 +163,8 @@
       "golf_tournament": "YES",
       "silent_auction": "UNKNOWN",
       "live_auction": "UNKNOWN",
-      "discovery_source": "web_search: \"charity golf tournament\" Florida 2026 fundraiser"
+      "discovery_source": "web_search: \"charity golf tournament\" Florida 2026 fundraiser",
+      "source_verification_level": "SEARCH_RESULT_SUPPORTED"
     },
     "contacts": [
       {
@@ -164,7 +176,8 @@
         "phone": "772-569-0760 ext 119",
         "contact_page_url": "https://www.seniorresourceassociation.org/pro-golf-tournament/",
         "email_source_url": "https://www.seniorresourceassociation.org/pro-golf-tournament/",
-        "contact_source_url": "https://www.seniorresourceassociation.org/pro-golf-tournament/"
+        "contact_source_url": "https://www.seniorresourceassociation.org/pro-golf-tournament/",
+        "source_verification_level": "SEARCH_RESULT_SUPPORTED"
       }
     ],
     "sources": [
@@ -178,7 +191,8 @@
       "website": "https://smhf.org",
       "city": "Sarasota",
       "state": "FL",
-      "organization_type": "hospital_foundation"
+      "organization_type": "hospital_foundation",
+      "source_verification_level": "SEARCH_RESULT_SUPPORTED"
     },
     "event": {
       "name": "The Hospital Gala",
@@ -192,7 +206,8 @@
       "gala": "YES",
       "silent_auction": "UNKNOWN",
       "live_auction": "UNKNOWN",
-      "discovery_source": "web_search: \"hospital foundation gala\" Florida 2026"
+      "discovery_source": "web_search: \"hospital foundation gala\" Florida 2026",
+      "source_verification_level": "SEARCH_RESULT_SUPPORTED"
     },
     "contacts": [
       {
@@ -200,11 +215,12 @@
         "last_name": "Fisk",
         "title": "Donor Relations Manager",
         "email": "rachael-fisk@smh.com",
-        "email_type": "VERIFIED_PUBLIC",
+        "email_type": "UNVERIFIED",
         "phone": "616-648-6258",
         "contact_page_url": "https://smhf.org/event/the-hospital-gala/",
         "email_source_url": "https://smhf.org/event/the-hospital-gala/",
-        "contact_source_url": "https://smhf.org/event/the-hospital-gala/"
+        "contact_source_url": "https://smhf.org/event/the-hospital-gala/",
+        "source_verification_level": "SEARCH_RESULT_SUPPORTED"
       }
     ],
     "sources": [
@@ -221,7 +237,8 @@
       "state": "FL",
       "zip": "34211",
       "phone": "941-677-7181",
-      "organization_type": "healthcare_foundation"
+      "organization_type": "healthcare_foundation",
+      "source_verification_level": "SEARCH_RESULT_SUPPORTED"
     },
     "event": {
       "name": "The Lotus Gala",
@@ -235,7 +252,8 @@
       "gala": "YES",
       "silent_auction": "UNKNOWN",
       "live_auction": "UNKNOWN",
-      "discovery_source": "web_search: \"annual gala\" nonprofit Tampa 2026 auction"
+      "discovery_source": "web_search: \"annual gala\" nonprofit Tampa 2026 auction",
+      "source_verification_level": "SEARCH_RESULT_SUPPORTED"
     },
     "contacts": [
       {
@@ -243,11 +261,12 @@
         "last_name": "Rasys",
         "title": "Executive Director",
         "email": "LRasys@FLCancer.com",
-        "email_type": "VERIFIED_PUBLIC",
+        "email_type": "UNVERIFIED",
         "phone": "941-677-7184",
         "contact_page_url": "https://fcsf.org/about/staff/",
         "email_source_url": "https://fcsf.org/about/staff/",
-        "contact_source_url": "https://fcsf.org/about/staff/"
+        "contact_source_url": "https://fcsf.org/about/staff/",
+        "source_verification_level": "SEARCH_RESULT_SUPPORTED"
       }
     ],
     "sources": [
@@ -261,7 +280,8 @@
       "website": "https://baptisthealth.net/baptist-health-foundation",
       "city": "Coral Gables",
       "state": "FL",
-      "organization_type": "hospital_foundation"
+      "organization_type": "hospital_foundation",
+      "source_verification_level": "SEARCH_RESULT_SUPPORTED"
     },
     "event": {
       "name": "The Grand Gala",
@@ -275,7 +295,8 @@
       "gala": "YES",
       "silent_auction": "UNKNOWN",
       "live_auction": "UNKNOWN",
-      "discovery_source": "web_search: \"annual gala\" nonprofit Miami 2026 auction"
+      "discovery_source": "web_search: \"annual gala\" nonprofit Miami 2026 auction",
+      "source_verification_level": "SEARCH_RESULT_SUPPORTED"
     },
     "contacts": [
       {
@@ -284,16 +305,18 @@
         "title": "CEO, Baptist Health Foundation",
         "email_type": "NOT_FOUND",
         "contact_page_url": "https://baptisthealth.net/baptist-health-foundation/about-us/leadership",
-        "contact_source_url": "https://baptisthealth.net/baptist-health-foundation/about-us/leadership"
+        "contact_source_url": "https://baptisthealth.net/baptist-health-foundation/about-us/leadership",
+        "source_verification_level": "SEARCH_RESULT_SUPPORTED"
       },
       {
         "first_name": "Anne Marie",
         "title": "Grand Gala Event Contact",
         "email": "AnneMarieB@BaptistHealth.net",
-        "email_type": "VERIFIED_PUBLIC",
+        "email_type": "UNVERIFIED",
         "contact_page_url": "https://southfloridahospitalnews.com/baptist-health-foundation-celebrates-accomplishments-and-philanthropic-support-at-the-grand-gala-2025/",
         "email_source_url": "https://southfloridahospitalnews.com/baptist-health-foundation-celebrates-accomplishments-and-philanthropic-support-at-the-grand-gala-2025/",
-        "contact_source_url": "https://southfloridahospitalnews.com/baptist-health-foundation-celebrates-accomplishments-and-philanthropic-support-at-the-grand-gala-2025/"
+        "contact_source_url": "https://southfloridahospitalnews.com/baptist-health-foundation-celebrates-accomplishments-and-philanthropic-support-at-the-grand-gala-2025/",
+        "source_verification_level": "SEARCH_RESULT_SUPPORTED"
       }
     ],
     "sources": [
@@ -309,7 +332,8 @@
       "city": "Riverview",
       "state": "FL",
       "phone": "813-689-6889",
-      "organization_type": "patient_support_nonprofit"
+      "organization_type": "patient_support_nonprofit",
+      "source_verification_level": "SEARCH_RESULT_SUPPORTED"
     },
     "event": {
       "name": "20th Annual Evening of Hope Gala",
@@ -324,7 +348,8 @@
       "gala": "YES",
       "silent_auction": "YES",
       "live_auction": "YES",
-      "discovery_source": "web_search: church fundraiser gala OR scholarship benefit dinner Florida 2026 auction"
+      "discovery_source": "web_search: church fundraiser gala OR scholarship benefit dinner Florida 2026 auction",
+      "source_verification_level": "SEARCH_RESULT_SUPPORTED"
     },
     "contacts": [
       {
@@ -334,7 +359,8 @@
         "phone": "813-689-6889",
         "contact_page_url": "https://angelfoundationfl.com/evening-of-hope-gala/",
         "email_source_url": "https://angelfoundationfl.com/evening-of-hope-gala/",
-        "contact_source_url": "https://angelfoundationfl.com/evening-of-hope-gala/"
+        "contact_source_url": "https://angelfoundationfl.com/evening-of-hope-gala/",
+        "source_verification_level": "SEARCH_RESULT_SUPPORTED"
       }
     ],
     "sources": [
@@ -351,7 +377,8 @@
       "state": "FL",
       "zip": "32789",
       "phone": "407-422-4615",
-      "organization_type": "child_welfare_nonprofit"
+      "organization_type": "child_welfare_nonprofit",
+      "source_verification_level": "SEARCH_RESULT_SUPPORTED"
     },
     "event": {
       "name": "Championship for Children Golf Tournament",
@@ -366,7 +393,8 @@
       "sponsors": "YES",
       "silent_auction": "UNKNOWN",
       "live_auction": "UNKNOWN",
-      "discovery_source": "web_search: \"golf tournament\" fundraiser Orlando Florida 2026 charity"
+      "discovery_source": "web_search: \"golf tournament\" fundraiser Orlando Florida 2026 charity",
+      "source_verification_level": "SEARCH_RESULT_SUPPORTED"
     },
     "contacts": [
       {
@@ -376,7 +404,8 @@
         "phone": "407-422-4615",
         "contact_page_url": "https://foundationforfosterchildren.org/contact/",
         "email_source_url": "https://foundationforfosterchildren.org/contact/",
-        "contact_source_url": "https://foundationforfosterchildren.org/contact/"
+        "contact_source_url": "https://foundationforfosterchildren.org/contact/",
+        "source_verification_level": "SEARCH_RESULT_SUPPORTED"
       }
     ],
     "sources": [
@@ -389,7 +418,8 @@
       "name": "NAAIA South Florida",
       "website": "https://southfl.naaia.org",
       "state": "FL",
-      "organization_type": "professional_association_scholarship"
+      "organization_type": "professional_association_scholarship",
+      "source_verification_level": "SEARCH_RESULT_SUPPORTED"
     },
     "event": {
       "name": "2026 NAAIA South Florida Annual Scholarship Gala",
@@ -404,7 +434,8 @@
       "gala": "YES",
       "silent_auction": "UNKNOWN",
       "live_auction": "UNKNOWN",
-      "discovery_source": "eventbrite_discovery: NAAIA South Florida scholarship gala"
+      "discovery_source": "eventbrite_discovery: NAAIA South Florida scholarship gala",
+      "source_verification_level": "SEARCH_RESULT_SUPPORTED"
     },
     "contacts": [
       {
@@ -413,7 +444,8 @@
         "email_type": "GENERAL_ORGANIZATION",
         "contact_page_url": "https://southfl.naaia.org/our-events/",
         "email_source_url": "https://naaiasouthflorida.org/about",
-        "contact_source_url": "https://southfl.naaia.org/our-events/"
+        "contact_source_url": "https://southfl.naaia.org/our-events/",
+        "source_verification_level": "SEARCH_RESULT_SUPPORTED"
       }
     ],
     "sources": [

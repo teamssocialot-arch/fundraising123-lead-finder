@@ -14,11 +14,17 @@ from sqlalchemy.orm import Session
 
 from app.dedupe.normalize import normalize_domain, normalize_event_name, normalize_org_name, normalize_phone
 from app.models import Contact, Event, LeadActivity, Organization, RecheckQueue, Source
-from config import ALLOWED_STATES, TIMING_BUCKETS
+from config import ALLOWED_STATES, SOURCE_VERIFICATION_LEVELS, TIMING_BUCKETS
 
 
 class IngestError(ValueError):
     pass
+
+
+def _check_source_verification_level(value: str) -> str:
+    if value not in SOURCE_VERIFICATION_LEVELS:
+        raise IngestError(f"source_verification_level must be one of {SOURCE_VERIFICATION_LEVELS}, got {value!r}")
+    return value
 
 
 def compute_timing_bucket(days_until_event: int | None) -> str | None:
@@ -42,6 +48,14 @@ def compute_days_until(event_date: date | None, today: date | None = None) -> in
 
 def compute_verification_status(*, state: str | None, event_date: date | None, event_url: str | None,
                                  org_website: str | None, city: str | None) -> str:
+    """Record-completeness signal only (state/date/website/event_url/city present).
+
+    This is NOT a claim that any fact was confirmed by visiting its source
+    page -- that confidence level is tracked separately in
+    source_verification_level (SOURCE_PAGE_VERIFIED / SEARCH_RESULT_SUPPORTED
+    / UNVERIFIED / NOT_FOUND). A "VERIFIED" record-completeness status can and
+    often will coexist with a SEARCH_RESULT_SUPPORTED source_verification_level.
+    """
     if not state or state not in ALLOWED_STATES:
         return "NEEDS_REVIEW"
     if event_date is None:
@@ -54,12 +68,14 @@ def compute_verification_status(*, state: str | None, event_date: date | None, e
 def find_or_create_organization(session: Session, *, name: str, website: str | None = None,
                                  city: str | None = None, state: str | None = None,
                                  zip_code: str | None = None, address: str | None = None,
-                                 phone: str | None = None, organization_type: str | None = None
+                                 phone: str | None = None, organization_type: str | None = None,
+                                 source_verification_level: str = "UNVERIFIED",
                                  ) -> tuple[Organization, bool]:
     """Returns (organization, created). Matches on domain first, then
     normalized name + state, before creating a new row."""
     if not name or not name.strip():
         raise IngestError("organization name is required")
+    _check_source_verification_level(source_verification_level)
 
     normalized_name = normalize_org_name(name)
     domain = normalize_domain(website) if website else None
@@ -89,6 +105,8 @@ def find_or_create_organization(session: Session, *, name: str, website: str | N
             existing.phone = phone
         if not existing.organization_type and organization_type:
             existing.organization_type = organization_type
+        if SOURCE_VERIFICATION_LEVELS.index(source_verification_level) < SOURCE_VERIFICATION_LEVELS.index(existing.source_verification_level or "NOT_FOUND"):
+            existing.source_verification_level = source_verification_level
         return existing, False
 
     org = Organization(
@@ -102,6 +120,7 @@ def find_or_create_organization(session: Session, *, name: str, website: str | N
         state=state,
         zip=zip_code,
         phone=phone,
+        source_verification_level=source_verification_level,
     )
     session.add(org)
     session.flush()
@@ -117,11 +136,13 @@ def find_or_create_event(session: Session, *, organization: Organization, event_
                           raffle: str = "UNKNOWN", gala: str = "NO", golf_tournament: str = "NO",
                           casino_night: str = "NO", travel_packages: str = "UNKNOWN",
                           sponsors: str = "UNKNOWN", discovery_source: str | None = None,
+                          source_verification_level: str = "UNVERIFIED",
                           today: date | None = None) -> tuple[Event, bool]:
     if not event_name or not event_name.strip():
         raise IngestError("event name is required")
     if state and state not in ALLOWED_STATES:
         raise IngestError(f"state {state!r} is outside the U.S. 50-states + D.C. scope")
+    _check_source_verification_level(source_verification_level)
 
     normalized_name = normalize_event_name(event_name)
 
@@ -168,6 +189,7 @@ def find_or_create_event(session: Session, *, organization: Organization, event_
         timing_bucket=timing_bucket,
         discovery_source=discovery_source,
         verification_status=verification_status,
+        source_verification_level=source_verification_level,
         lead_status="NEW",
     )
     session.add(event)
@@ -179,12 +201,21 @@ def add_contact(session: Session, *, organization: Organization, first_name: str
                  last_name: str | None = None, title: str | None = None, email: str | None = None,
                  email_type: str = "NOT_FOUND", phone: str | None = None,
                  contact_page_url: str | None = None, email_source_url: str | None = None,
-                 contact_source_url: str | None = None) -> Contact:
+                 contact_source_url: str | None = None,
+                 source_verification_level: str = "UNVERIFIED") -> Contact:
     if email and email_type == "NOT_FOUND":
         # An email value implies it was actually found somewhere -- classification bug if left NOT_FOUND.
         raise IngestError("email provided but email_type is NOT_FOUND")
     if email and not email_source_url:
         raise IngestError("email provided without an email_source_url -- cannot claim it's public/sourced")
+    _check_source_verification_level(source_verification_level)
+    if email_type == "VERIFIED_PUBLIC" and source_verification_level != "SOURCE_PAGE_VERIFIED":
+        # VERIFIED_PUBLIC asserts the email was confirmed on a legitimate public source page.
+        # A search-result snippet alone is not sufficient evidence for that claim.
+        raise IngestError(
+            "email_type VERIFIED_PUBLIC requires source_verification_level=SOURCE_PAGE_VERIFIED "
+            "(the source page must have actually been fetched and the email confirmed on it)"
+        )
 
     verification_status = "VERIFIED" if email_type == "VERIFIED_PUBLIC" and email_source_url else (
         "PARTIALLY_VERIFIED" if (first_name or last_name) and contact_source_url else "NEEDS_REVIEW"
@@ -202,6 +233,7 @@ def add_contact(session: Session, *, organization: Organization, first_name: str
         email_source_url=email_source_url,
         contact_source_url=contact_source_url,
         verification_status=verification_status,
+        source_verification_level=source_verification_level,
         last_verified=datetime.now(timezone.utc) if email or first_name else None,
     )
     session.add(contact)

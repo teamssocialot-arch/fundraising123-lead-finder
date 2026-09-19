@@ -24,6 +24,8 @@ class Organization(Base):
     state = Column(String, nullable=True, index=True)
     zip = Column(String, nullable=True)
     phone = Column(String, nullable=True)
+    # SOURCE_PAGE_VERIFIED / SEARCH_RESULT_SUPPORTED / UNVERIFIED / NOT_FOUND -- how org identity/address/phone were confirmed
+    source_verification_level = Column(String, default="UNVERIFIED")
     created_at = Column(DateTime(timezone=True), default=_now)
     updated_at = Column(DateTime(timezone=True), default=_now, onupdate=_now)
 
