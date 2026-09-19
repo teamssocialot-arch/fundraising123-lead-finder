@@ -21,7 +21,11 @@
       "live_auction": "UNKNOWN",
       "gala": "YES",
       "discovery_source": "web_search: \"silent auction\" gala Florida 2026 nonprofit fundraiser",
-      "source_verification_level": "SEARCH_RESULT_SUPPORTED"
+      "source_verification_level": "SEARCH_RESULT_SUPPORTED",
+      "fundraiser_url": "https://www.sebastianstrong.org/events/discoveringhopegala2026/",
+      "fundraiser_url_type": "OFFICIAL_EVENT_PAGE",
+      "fundraiser_url_verification_level": "SEARCH_RESULT_SUPPORTED",
+      "discovery_source_url": "https://www.sebastianstrong.org/events/discoveringhopegala2026/"
     },
     "contacts": [
       {
@@ -65,7 +69,11 @@
       "silent_auction": "UNKNOWN",
       "live_auction": "UNKNOWN",
       "discovery_source": "web_search: \"annual gala\" nonprofit Miami 2026 auction",
-      "source_verification_level": "SEARCH_RESULT_SUPPORTED"
+      "source_verification_level": "SEARCH_RESULT_SUPPORTED",
+      "fundraiser_url": "https://www.jdch.com/give-back/foundation-events/the-red-gala",
+      "fundraiser_url_type": "OFFICIAL_EVENT_PAGE",
+      "fundraiser_url_verification_level": "SEARCH_RESULT_SUPPORTED",
+      "discovery_source_url": "https://www.jdch.com/give-back/foundation-events/the-red-gala"
     },
     "contacts": [
       {
@@ -110,7 +118,11 @@
       "raffle": "YES",
       "gala": "YES",
       "discovery_source": "web_search: \"annual gala\" nonprofit Tampa 2026 auction",
-      "source_verification_level": "SEARCH_RESULT_SUPPORTED"
+      "source_verification_level": "SEARCH_RESULT_SUPPORTED",
+      "fundraiser_url": "https://www.keeptampabaybeautiful.org/tropicalnights",
+      "fundraiser_url_type": "OFFICIAL_EVENT_PAGE",
+      "fundraiser_url_verification_level": "SEARCH_RESULT_SUPPORTED",
+      "discovery_source_url": "https://www.keeptampabaybeautiful.org/tropicalnights"
     },
     "contacts": [
       {
@@ -164,7 +176,11 @@
       "silent_auction": "UNKNOWN",
       "live_auction": "UNKNOWN",
       "discovery_source": "web_search: \"charity golf tournament\" Florida 2026 fundraiser",
-      "source_verification_level": "SEARCH_RESULT_SUPPORTED"
+      "source_verification_level": "SEARCH_RESULT_SUPPORTED",
+      "fundraiser_url": "https://www.seniorresourceassociation.org/pro-golf-tournament/",
+      "fundraiser_url_type": "OFFICIAL_EVENT_PAGE",
+      "fundraiser_url_verification_level": "SEARCH_RESULT_SUPPORTED",
+      "discovery_source_url": "https://www.seniorresourceassociation.org/pro-golf-tournament/"
     },
     "contacts": [
       {
@@ -207,7 +223,11 @@
       "silent_auction": "UNKNOWN",
       "live_auction": "UNKNOWN",
       "discovery_source": "web_search: \"hospital foundation gala\" Florida 2026",
-      "source_verification_level": "SEARCH_RESULT_SUPPORTED"
+      "source_verification_level": "SEARCH_RESULT_SUPPORTED",
+      "fundraiser_url": "https://smhf.org/event/the-hospital-gala/",
+      "fundraiser_url_type": "OFFICIAL_EVENT_PAGE",
+      "fundraiser_url_verification_level": "SEARCH_RESULT_SUPPORTED",
+      "discovery_source_url": "https://smhf.org/event/the-hospital-gala/"
     },
     "contacts": [
       {
@@ -253,7 +273,11 @@
       "silent_auction": "UNKNOWN",
       "live_auction": "UNKNOWN",
       "discovery_source": "web_search: \"annual gala\" nonprofit Tampa 2026 auction",
-      "source_verification_level": "SEARCH_RESULT_SUPPORTED"
+      "source_verification_level": "SEARCH_RESULT_SUPPORTED",
+      "fundraiser_url": "https://fcsf.org/fcsf-events/the-lotus-gala/",
+      "fundraiser_url_type": "OFFICIAL_EVENT_PAGE",
+      "fundraiser_url_verification_level": "SEARCH_RESULT_SUPPORTED",
+      "discovery_source_url": "https://fcsf.org/fcsf-events/the-lotus-gala/"
     },
     "contacts": [
       {
@@ -291,12 +315,16 @@
       "state": "FL",
       "event_type": "gala",
       "description": "Baptist Health Foundation's largest annual fundraising gala, supporting hospitals, institutes, and programs from the Florida Keys to Palm Beach.",
-      "event_url": "https://baptisthealth.net/baptist-health-foundation/events",
+      "event_url": "https://baptisthealthgrandgala.org/",
       "gala": "YES",
       "silent_auction": "UNKNOWN",
       "live_auction": "UNKNOWN",
       "discovery_source": "web_search: \"annual gala\" nonprofit Miami 2026 auction",
-      "source_verification_level": "SEARCH_RESULT_SUPPORTED"
+      "source_verification_level": "SEARCH_RESULT_SUPPORTED",
+      "fundraiser_url": "https://baptisthealthgrandgala.org/",
+      "fundraiser_url_type": "OFFICIAL_EVENT_PAGE",
+      "fundraiser_url_verification_level": "SEARCH_RESULT_SUPPORTED",
+      "discovery_source_url": "https://baptisthealth.net/baptist-health-foundation/events"
     },
     "contacts": [
       {
@@ -320,7 +348,8 @@
       }
     ],
     "sources": [
-      {"url": "https://baptisthealth.net/baptist-health-foundation/events", "entity_type": "event", "purpose": "event_details"},
+      {"url": "https://baptisthealthgrandgala.org/", "entity_type": "event", "purpose": "fundraiser_url"},
+      {"url": "https://baptisthealth.net/baptist-health-foundation/events", "entity_type": "event", "purpose": "discovery_source_url"},
       {"url": "https://baptisthealth.net/baptist-health-foundation/about-us/leadership", "entity_type": "organization", "purpose": "contact_name"},
       {"url": "https://southfloridahospitalnews.com/baptist-health-foundation-celebrates-accomplishments-and-philanthropic-support-at-the-grand-gala-2025/", "entity_type": "organization", "purpose": "email"}
     ]
@@ -349,7 +378,11 @@
       "silent_auction": "YES",
       "live_auction": "YES",
       "discovery_source": "web_search: church fundraiser gala OR scholarship benefit dinner Florida 2026 auction",
-      "source_verification_level": "SEARCH_RESULT_SUPPORTED"
+      "source_verification_level": "SEARCH_RESULT_SUPPORTED",
+      "fundraiser_url": "https://angelfoundationfl.com/evening-of-hope-gala/",
+      "fundraiser_url_type": "OFFICIAL_EVENT_PAGE",
+      "fundraiser_url_verification_level": "SEARCH_RESULT_SUPPORTED",
+      "discovery_source_url": "https://angelfoundationfl.com/evening-of-hope-gala/"
     },
     "contacts": [
       {
@@ -394,7 +427,11 @@
       "silent_auction": "UNKNOWN",
       "live_auction": "UNKNOWN",
       "discovery_source": "web_search: \"golf tournament\" fundraiser Orlando Florida 2026 charity",
-      "source_verification_level": "SEARCH_RESULT_SUPPORTED"
+      "source_verification_level": "SEARCH_RESULT_SUPPORTED",
+      "fundraiser_url": "https://foundationforfosterchildren.org/championship-for-children-2026/",
+      "fundraiser_url_type": "OFFICIAL_EVENT_PAGE",
+      "fundraiser_url_verification_level": "SEARCH_RESULT_SUPPORTED",
+      "discovery_source_url": "https://foundationforfosterchildren.org/championship-for-children-2026/"
     },
     "contacts": [
       {
@@ -435,7 +472,11 @@
       "silent_auction": "UNKNOWN",
       "live_auction": "UNKNOWN",
       "discovery_source": "eventbrite_discovery: NAAIA South Florida scholarship gala",
-      "source_verification_level": "SEARCH_RESULT_SUPPORTED"
+      "source_verification_level": "SEARCH_RESULT_SUPPORTED",
+      "fundraiser_url": "https://www.eventbrite.com/e/2026-naaia-south-florida-annual-scholarship-gala-tickets-1991113339598",
+      "fundraiser_url_type": "EVENTBRITE",
+      "fundraiser_url_verification_level": "SEARCH_RESULT_SUPPORTED",
+      "discovery_source_url": "https://www.eventbrite.com/e/2026-naaia-south-florida-annual-scholarship-gala-tickets-1991113339598"
     },
     "contacts": [
       {

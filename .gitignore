@@ -4,5 +4,10 @@ __pycache__/
 venv/
 data/*.db
 data/*.db-journal
+# Exception: the small Stage-1 Florida validation DB is intentionally committed
+# so the GitHub Actions verification workflow can persist its results and the
+# dashboard can read them back without any extra hosting setup.
+!data/fundraising123.db
 .env
 *.egg-info/
+qa_report_output.txt

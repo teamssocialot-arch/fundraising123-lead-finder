@@ -26,6 +26,14 @@ ALLOWED_STATES = {
     "VT", "VA", "WA", "WV", "WI", "WY",
 }
 
+FUNDRAISER_URL_TYPES = (
+    "OFFICIAL_EVENT_PAGE",
+    "REGISTRATION_PAGE",
+    "EVENTBRITE",
+    "ORGANIZATION_ANNOUNCEMENT",
+    "THIRD_PARTY_EVENT_LISTING",
+)
+
 SOURCE_VERIFICATION_LEVELS = (
     "SOURCE_PAGE_VERIFIED",    # the source page was actually fetched and the fact confirmed on it
     "SEARCH_RESULT_SUPPORTED", # the fact appears in a search result/snippet; underlying page not fetched

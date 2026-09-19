@@ -3,6 +3,15 @@
 <p><a href="/">&larr; Back to dashboard</a></p>
 <h2>{{ event.event_name }}</h2>
 
+<p>
+  {% if event.fundraiser_url and event.fundraiser_url != 'NOT_FOUND' %}
+  <a class="btn-fundraiser-large" href="{{ event.fundraiser_url }}" target="_blank" rel="noopener noreferrer">VIEW FUNDRAISER</a>
+  <span class="field k" style="margin-left:10px;">({{ event.fundraiser_url_type or "n/a" }}, level: {{ event.fundraiser_url_verification_level }})</span>
+  {% else %}
+  <span class="badge badge-review">FUNDRAISER URL NOT FOUND -- flagged for review</span>
+  {% endif %}
+</p>
+
 <div class="detail-grid">
   <div class="detail-section">
     <h3>Organization</h3>
@@ -20,6 +29,11 @@
     <div class="field"><div class="k">Venue / Location</div><div class="v">{{ event.venue or "-" }} — {{ event.city }}, {{ event.state }} {{ event.zip or "" }}</div></div>
     <div class="field"><div class="k">Event type</div><div class="v">{{ event.event_type or "-" }}</div></div>
     <div class="field"><div class="k">Event URL</div><div class="v"><a href="{{ event.event_url }}" class="source-link">{{ event.event_url or "-" }}</a></div></div>
+    <div class="field"><div class="k">Fundraiser URL</div><div class="v"><a href="{{ event.fundraiser_url }}" class="source-link">{{ event.fundraiser_url or "NOT_FOUND" }}</a> ({{ event.fundraiser_url_type or "n/a" }})</div></div>
+    {% if event.discovery_source_url and event.discovery_source_url != event.fundraiser_url %}
+    <div class="field"><div class="k">Discovery source URL</div><div class="v"><a href="{{ event.discovery_source_url }}" class="source-link">{{ event.discovery_source_url }}</a></div></div>
+    {% endif %}
+    <div class="field"><div class="k">Fundraiser URL last checked</div><div class="v">{{ event.fundraiser_url_last_checked or "never" }}</div></div>
     <div class="field"><div class="k">Ticket URL</div><div class="v"><a href="{{ event.ticket_url }}" class="source-link">{{ event.ticket_url or "-" }}</a></div></div>
     <div class="field"><div class="k">Description</div><div class="v">{{ event.description or "-" }}</div></div>
   </div>

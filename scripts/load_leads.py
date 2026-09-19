@@ -85,6 +85,10 @@ def load_file(path: str):
             sponsors=event_data.get("sponsors", "UNKNOWN"),
             discovery_source=event_data.get("discovery_source"),
             source_verification_level=event_data.get("source_verification_level", "UNVERIFIED"),
+            fundraiser_url=event_data.get("fundraiser_url"),
+            fundraiser_url_type=event_data.get("fundraiser_url_type"),
+            fundraiser_url_verification_level=event_data.get("fundraiser_url_verification_level", "UNVERIFIED"),
+            discovery_source_url=event_data.get("discovery_source_url"),
         )
         stats["events_created" if event_created else "events_deduped"] += 1
 

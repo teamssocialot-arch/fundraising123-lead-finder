@@ -1,0 +1,65 @@
+name: Verify Florida Stage 1 Sources
+
+# Manual trigger ONLY -- no schedule, so no crawl or verification run happens
+# without a human clicking the button. Scope is hard-coded to the existing
+# 10-lead Florida validation set: this workflow discovers nothing new, calls
+# no search API, and touches no state other than FL (also enforced inside
+# scripts/verify_sources.py itself as a second safety net).
+on:
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: verify-florida-stage1
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      # No API keys/secrets are used anywhere in this workflow: verification
+      # fetches public pages directly over normal outbound HTTPS, it does not
+      # call any search API or paid service.
+      - name: Load the 10 Florida Stage 1 seed leads (idempotent -- dedupes, never duplicates)
+        run: python scripts/load_leads.py data/seed/florida_stage1_leads.json
+
+      - name: Run real source-page verification (Florida only, robots.txt-respecting, rate-limited)
+        run: python scripts/verify_sources.py
+
+      - name: Generate QA report
+        run: python scripts/qa_report.py | tee qa_report_output.txt
+
+      - name: Upload QA report and verification log as downloadable artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: florida-stage1-verification-results
+          path: |
+            qa_report_output.txt
+            data/verification_log.json
+          retention-days: 90
+
+      - name: Commit updated database and verification log back to the repo
+        run: |
+          git config user.name "fundraising123-lead-finder-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add data/fundraising123.db data/verification_log.json
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+          else
+            git commit -m "Update Florida Stage 1 verification results [skip ci]"
+            git push
+          fi

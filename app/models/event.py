@@ -31,6 +31,19 @@ class Event(Base):
     event_url = Column(String, nullable=True)
     ticket_url = Column(String, nullable=True)
 
+    # The best available public page specifically about this fundraiser (never
+    # just the org homepage) -- what "View Fundraiser" links to. NOT_FOUND if
+    # no fundraiser-specific page could be identified (flags the lead for review).
+    fundraiser_url = Column(String, nullable=True)
+    # OFFICIAL_EVENT_PAGE / REGISTRATION_PAGE / EVENTBRITE / ORGANIZATION_ANNOUNCEMENT / THIRD_PARTY_EVENT_LISTING
+    fundraiser_url_type = Column(String, nullable=True)
+    # SOURCE_PAGE_VERIFIED / SEARCH_RESULT_SUPPORTED / UNVERIFIED / NOT_FOUND
+    fundraiser_url_verification_level = Column(String, default="UNVERIFIED")
+    fundraiser_url_last_checked = Column(DateTime(timezone=True), nullable=True)
+    # The URL the event was originally discovered through, if different from fundraiser_url
+    # (e.g. a press article that led to finding the org's own dedicated event page).
+    discovery_source_url = Column(String, nullable=True)
+
     # YES / NO / UNKNOWN
     silent_auction = Column(String, default="UNKNOWN")
     live_auction = Column(String, default="UNKNOWN")

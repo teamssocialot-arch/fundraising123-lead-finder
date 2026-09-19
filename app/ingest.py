@@ -14,7 +14,7 @@ from sqlalchemy.orm import Session
 
 from app.dedupe.normalize import normalize_domain, normalize_event_name, normalize_org_name, normalize_phone
 from app.models import Contact, Event, LeadActivity, Organization, RecheckQueue, Source
-from config import ALLOWED_STATES, SOURCE_VERIFICATION_LEVELS, TIMING_BUCKETS
+from config import ALLOWED_STATES, FUNDRAISER_URL_TYPES, SOURCE_VERIFICATION_LEVELS, TIMING_BUCKETS
 
 
 class IngestError(ValueError):
@@ -47,20 +47,26 @@ def compute_days_until(event_date: date | None, today: date | None = None) -> in
 
 
 def compute_verification_status(*, state: str | None, event_date: date | None, event_url: str | None,
-                                 org_website: str | None, city: str | None) -> str:
-    """Record-completeness signal only (state/date/website/event_url/city present).
+                                 org_website: str | None, city: str | None,
+                                 fundraiser_url: str | None = None) -> str:
+    """Record-completeness signal only (state/date/website/event_url/city/fundraiser_url present).
 
     This is NOT a claim that any fact was confirmed by visiting its source
     page -- that confidence level is tracked separately in
     source_verification_level (SOURCE_PAGE_VERIFIED / SEARCH_RESULT_SUPPORTED
     / UNVERIFIED / NOT_FOUND). A "VERIFIED" record-completeness status can and
     often will coexist with a SEARCH_RESULT_SUPPORTED source_verification_level.
+
+    A missing or NOT_FOUND fundraiser_url keeps the record out of "VERIFIED"
+    even if everything else is present -- every lead needs a fundraiser-specific
+    page a human can click through to before outreach.
     """
     if not state or state not in ALLOWED_STATES:
         return "NEEDS_REVIEW"
     if event_date is None:
         return "NEEDS_REVIEW"
-    if org_website and event_url and city:
+    has_fundraiser_url = bool(fundraiser_url) and fundraiser_url != "NOT_FOUND"
+    if org_website and event_url and city and has_fundraiser_url:
         return "VERIFIED"
     return "PARTIALLY_VERIFIED"
 
@@ -137,12 +143,23 @@ def find_or_create_event(session: Session, *, organization: Organization, event_
                           casino_night: str = "NO", travel_packages: str = "UNKNOWN",
                           sponsors: str = "UNKNOWN", discovery_source: str | None = None,
                           source_verification_level: str = "UNVERIFIED",
+                          fundraiser_url: str | None = None, fundraiser_url_type: str | None = None,
+                          fundraiser_url_verification_level: str = "UNVERIFIED",
+                          discovery_source_url: str | None = None,
                           today: date | None = None) -> tuple[Event, bool]:
     if not event_name or not event_name.strip():
         raise IngestError("event name is required")
     if state and state not in ALLOWED_STATES:
         raise IngestError(f"state {state!r} is outside the U.S. 50-states + D.C. scope")
     _check_source_verification_level(source_verification_level)
+    _check_source_verification_level(fundraiser_url_verification_level)
+    if fundraiser_url and fundraiser_url != "NOT_FOUND":
+        if not fundraiser_url_type:
+            raise IngestError("fundraiser_url provided without a fundraiser_url_type")
+        if fundraiser_url_type not in FUNDRAISER_URL_TYPES:
+            raise IngestError(f"fundraiser_url_type must be one of {FUNDRAISER_URL_TYPES}, got {fundraiser_url_type!r}")
+        if fundraiser_url == organization.website:
+            raise IngestError("fundraiser_url must not be just the organization's homepage")
 
     normalized_name = normalize_event_name(event_name)
 
@@ -160,7 +177,7 @@ def find_or_create_event(session: Session, *, organization: Organization, event_
     timing_bucket = compute_timing_bucket(days_until)
     verification_status = compute_verification_status(
         state=state, event_date=event_date, event_url=event_url,
-        org_website=organization.website, city=city,
+        org_website=organization.website, city=city, fundraiser_url=fundraiser_url,
     )
 
     event = Event(
@@ -190,6 +207,10 @@ def find_or_create_event(session: Session, *, organization: Organization, event_
         discovery_source=discovery_source,
         verification_status=verification_status,
         source_verification_level=source_verification_level,
+        fundraiser_url=fundraiser_url,
+        fundraiser_url_type=fundraiser_url_type,
+        fundraiser_url_verification_level=fundraiser_url_verification_level,
+        discovery_source_url=discovery_source_url,
         lead_status="NEW",
     )
     session.add(event)
@@ -239,6 +260,28 @@ def add_contact(session: Session, *, organization: Organization, first_name: str
     session.add(contact)
     session.flush()
     return contact
+
+
+def upgrade_source_verification_level(entity, new_level: str, *, email_confirmed: bool = False) -> bool:
+    """Promote entity.source_verification_level to new_level if that's a real improvement; never downgrades.
+
+    This is the one place that may raise a Contact's email_type to VERIFIED_PUBLIC
+    outside of add_contact() -- e.g. a later verification pass that re-checks an
+    already-created contact. It enforces the exact same non-negotiable rule as
+    add_contact(): VERIFIED_PUBLIC requires the new level to be SOURCE_PAGE_VERIFIED
+    *and* email_confirmed=True (the exact email string was actually found on the
+    fetched page), never a search-snippet inference. Returns True if a change was made.
+    """
+    _check_source_verification_level(new_level)
+    current = entity.source_verification_level or "NOT_FOUND"
+    changed = SOURCE_VERIFICATION_LEVELS.index(new_level) < SOURCE_VERIFICATION_LEVELS.index(current)
+    if changed:
+        entity.source_verification_level = new_level
+    if isinstance(entity, Contact) and entity.email and new_level == "SOURCE_PAGE_VERIFIED" and email_confirmed:
+        if entity.email_type != "GENERAL_ORGANIZATION":
+            entity.email_type = "VERIFIED_PUBLIC"
+            changed = True
+    return changed
 
 
 def record_source(session: Session, *, url: str, entity_type: str, entity_id: int, purpose: str,
