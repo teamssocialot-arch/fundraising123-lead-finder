@@ -11,14 +11,15 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from app.db import get_session  # noqa: E402
-from app.models import Contact, Event, Organization  # noqa: E402
+from app.ingest import lead_evidence_summary, select_primary_contact  # noqa: E402
+from app.models import Contact, Event, Evidence, Organization  # noqa: E402
+from config import VERIFICATION_LEVELS  # noqa: E402
 
-LEVELS = ("SOURCE_PAGE_VERIFIED", "SEARCH_RESULT_SUPPORTED", "UNVERIFIED", "NOT_FOUND")
 LOG_PATH = Path(__file__).resolve().parent.parent / "data" / "verification_log.json"
 
 
 def _level_counts(rows, level_attr="source_verification_level"):
-    return {level: sum(1 for r in rows if getattr(r, level_attr) == level) for level in LEVELS}
+    return {level: sum(1 for r in rows if getattr(r, level_attr) == level) for level in VERIFICATION_LEVELS}
 
 
 def main():
@@ -27,6 +28,7 @@ def main():
     events = session.query(Event).all()
     orgs = session.query(Organization).all()
     contacts = session.query(Contact).all()
+    evidence_rows = session.query(Evidence).all()
 
     def count(pred):
         return sum(1 for e in events if pred(e))
@@ -37,6 +39,7 @@ def main():
     print(f"Total events:            {len(events)}")
     print(f"Total organizations:     {len(orgs)}")
     print(f"Total contacts:          {len(contacts)}")
+    print(f"Total evidence rows:     {len(evidence_rows)}")
     print(f"Silent auctions (YES):   {count(lambda e: e.silent_auction == 'YES')}")
     print(f"Live auctions (YES):     {count(lambda e: e.live_auction == 'YES')}")
     print(f"Galas (YES):             {count(lambda e: e.gala == 'YES')}")
@@ -49,24 +52,31 @@ def main():
 
     print()
     print("-" * 100)
-    print("SOURCE VERIFICATION LEVELS (how each fact was actually confirmed)")
+    print("VERIFICATION LEVELS (how each fact was actually confirmed)")
     print("-" * 100)
     event_levels = _level_counts(events)
     org_levels = _level_counts(orgs)
-    contact_levels = _level_counts(contacts)
-    print(f"{'Level':26s} {'Events':>8s} {'Orgs':>8s} {'Contacts':>10s}")
-    for level in LEVELS:
-        print(f"{level:26s} {event_levels[level]:>8d} {org_levels[level]:>8d} {contact_levels[level]:>10d}")
+    contact_levels = _level_counts(contacts, "source_verification_level")
+    email_levels = _level_counts([c for c in contacts if c.email], "email_verification_level")
+    print(f"{'Level':26s} {'Events':>8s} {'Orgs':>8s} {'Contact IDs':>12s} {'Emails':>8s}")
+    for level in VERIFICATION_LEVELS:
+        print(f"{level:26s} {event_levels[level]:>8d} {org_levels[level]:>8d} {contact_levels[level]:>12d} {email_levels.get(level, 0):>8d}")
 
     verified_public = sum(1 for c in contacts if c.email_type == "VERIFIED_PUBLIC")
     unverified_email = sum(1 for c in contacts if c.email_type == "UNVERIFIED")
     general_org = sum(1 for c in contacts if c.email_type == "GENERAL_ORGANIZATION")
     not_found = sum(1 for c in contacts if c.email_type == "NOT_FOUND")
     print()
-    print(f"Emails SOURCE_PAGE_VERIFIED + VERIFIED_PUBLIC: {verified_public}")
-    print(f"Emails UNVERIFIED (named, not page-confirmed): {unverified_email}")
-    print(f"General org emails (info@, events@, etc.):     {general_org}")
-    print(f"Contacts with NOT_FOUND email:                 {not_found}")
+    print(f"Emails VERIFIED_PUBLIC (page-content confirmed, live or archived): {verified_public}")
+    print(f"Emails UNVERIFIED (named, not page-confirmed):                    {unverified_email}")
+    print(f"General org emails (info@, events@, etc.):                       {general_org}")
+    print(f"Contacts with NOT_FOUND email:                                   {not_found}")
+
+    evidence_source_counts = {}
+    for r in evidence_rows:
+        evidence_source_counts[r.source_type] = evidence_source_counts.get(r.source_type, 0) + 1
+    print()
+    print("Evidence rows by source type: " + ", ".join(f"{k}={v}" for k, v in sorted(evidence_source_counts.items())) or "(none)")
 
     if LOG_PATH.exists():
         log = json.loads(LOG_PATH.read_text())
@@ -74,7 +84,9 @@ def main():
         print("-" * 100)
         print(f"LAST VERIFICATION RUN: {log.get('run_at')} ({log.get('scope')})")
         print("-" * 100)
-        print(f"Pages fetched successfully: {log.get('urls_fetched_ok', 0)}")
+        print(f"Pages fetched successfully:      {log.get('pages_fetched_ok', 0)}")
+        print(f"Wayback lookups attempted:       {log.get('wayback_lookups_attempted', 0)}")
+        print(f"ProPublica lookups attempted:    {log.get('propublica_lookups_attempted', 0)}")
         inaccessible = log.get("inaccessible_urls", {})
         print(f"URLs that could not be accessed: {len(inaccessible)}")
         for url, reason in inaccessible.items():
@@ -92,32 +104,42 @@ def main():
     print("=" * 100)
     print("RESULTS")
     print("=" * 100)
+    total_evidence_sources = 0
     for e in events:
         org = session.get(Organization, e.organization_id)
         org_contacts = session.query(Contact).filter(Contact.organization_id == org.organization_id).all()
+        primary = select_primary_contact(org_contacts)
+        ev_summary = lead_evidence_summary(session, event=e, organization=org, contacts=org_contacts)
+        total_evidence_sources += ev_summary["count"]
+
         print(f"\n[{e.event_id}] {e.event_name}")
-        print(f"  Organization:       {org.organization_name} (org source level: {org.source_verification_level})")
+        print(f"  Organization:       {org.organization_name} (org level: {org.source_verification_level})")
         print(f"  Event date:         {e.event_date or 'UNKNOWN'}  ({e.timing_bucket or 'n/a'}, {e.days_until_event if e.days_until_event is not None else 'n/a'} days)")
         print(f"  Location:           {e.city}, {e.state}")
         print(f"  Event type:         {e.event_type}")
         print(f"  Silent/Live auction:{e.silent_auction} / {e.live_auction}")
-        print(f"  Org website:        {org.website}")
-        print(f"  Event URL:          {e.event_url}")
         print(f"  Fundraiser URL:     {e.fundraiser_url or 'NOT_FOUND'} ({e.fundraiser_url_type or 'n/a'}, "
-              f"level: {e.fundraiser_url_verification_level}, last checked: {e.fundraiser_url_last_checked or 'never'})")
-        if e.discovery_source_url and e.discovery_source_url != e.fundraiser_url:
-            print(f"  Discovery source URL (differs from fundraiser_url): {e.discovery_source_url}")
-        print(f"  Event source level: {e.source_verification_level}")
-        if org_contacts:
-            for c in org_contacts:
-                print(f"  Contact:            {c.first_name or ''} {c.last_name or ''} -- {c.title or 'n/a'}")
-                print(f"    Email:              {c.email or 'NOT FOUND'} ({c.email_type}, source level: {c.source_verification_level})")
-                print(f"    Phone:              {c.phone or 'NOT FOUND'}")
-                print(f"    Contact source URL: {c.contact_source_url}")
-                print(f"    Email source URL:   {c.email_source_url}")
+              f"level: {e.fundraiser_url_verification_level})")
+        print(f"  Overall event level:{e.source_verification_level}")
+        print(f"  Evidence:           {ev_summary['summary']}")
+        for url in ev_summary["urls"]:
+            print(f"    - {url}")
+        if primary:
+            print(f"  Primary contact:    {primary.first_name or ''} {primary.last_name or ''} -- {primary.title or 'n/a'}")
+            print(f"    Email:              {primary.email or 'NOT FOUND'} ({primary.email_type}, email level: {primary.email_verification_level})")
+            print(f"    Phone:              {primary.phone or 'NOT FOUND'}")
         else:
-            print("  Contact:            NONE FOUND")
+            print("  Primary contact:    NONE FOUND")
+        if len(org_contacts) > 1:
+            for c in org_contacts:
+                if c is primary:
+                    continue
+                print(f"  Other contact:      {c.first_name or ''} {c.last_name or ''} -- {c.title or 'n/a'} "
+                      f"| {c.email or 'NOT FOUND'} ({c.email_type})")
         print(f"  Record-completeness status: {e.verification_status}")
+
+    if events:
+        print(f"\nAverage evidence sources per lead: {total_evidence_sources / len(events):.1f}")
 
 
 if __name__ == "__main__":

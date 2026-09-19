@@ -1,25 +1,38 @@
-"""Real source-page verification pass for the Florida Stage 1 validation set.
+"""Multi-source evidence-based verification pass for the Florida Stage 1 set.
 
-Scope, deliberately narrow:
-  - Operates ONLY on records with state == "FL" already in the database
-    (loaded from data/seed/florida_stage1_leads.json). It discovers nothing
-    new -- no new events, organizations, states, or search-API calls.
-  - For every organization website, event page, and contact/email source
-    URL already on file, attempts a direct HTTP fetch and checks whether the
-    stored fact is actually present on that page.
-  - Upgrades a record's source_verification_level to SOURCE_PAGE_VERIFIED
-    ONLY when the page was successfully fetched AND the specific fact
-    (org name, event name/date, contact name, or exact email string) was
-    found on it. Otherwise the record is left at its current level.
-  - Never bypasses robots.txt, CAPTCHAs, logins, or anti-bot challenges --
-    any such case is recorded as inaccessible and skipped, not retried.
-  - Never invents or infers an email address; only confirms or fails to
-    confirm an email that was already on file.
-
-Requires no API keys and makes no calls to any paid service.
+PHASE A scope, deliberately narrow:
+  - Operates ONLY on records with state == "FL" already in the database.
+    Discovers nothing new -- no new events, organizations, states, contacts,
+    or leads. Never calls a paid search API (Google/Bing are NOT wired in
+    yet, by explicit instruction) and never uses any scraping-proxy,
+    anti-bot-bypass, CAPTCHA-solving, or contact-guessing service.
+  - Free public sources only, in this order per claim:
+      1. Direct live fetch of the target's own page.
+      2. If that's inaccessible: a Wayback Machine snapshot of the SAME page
+         (the Internet Archive's own crawler already legitimately collected
+         it -- we never touch the live target site to get it).
+      3. For ORGANIZATION IDENTITY only: ProPublica Nonprofit Explorer
+         (public IRS Form 990 data). Never used as evidence for an event
+         claim -- a nonprofit registry has no event-specific information.
+  - Every successfully-read piece of content becomes an Evidence row
+    (never a failed/blocked fetch attempt -- those go in the separate
+    inaccessible-URLs log instead). Verification levels are always
+    COMPUTED from the accumulated Evidence, never asserted directly:
+    SOURCE_PAGE_VERIFIED / ARCHIVED_SOURCE_VERIFIED / MULTI_SOURCE_CONFIRMED
+    / SEARCH_RESULT_SUPPORTED / UNVERIFIED / NOT_FOUND
+    (see app.ingest.compute_verification_level_from_evidence).
+  - Two evidence rows pointing at the same underlying page (e.g. a live copy
+    and an archived copy of the identical URL) are normalized to one source,
+    never counted as two independent ones for MULTI_SOURCE_CONFIRMED.
+  - An email is only ever recorded as confirmed when the literal address
+    string is present in fetched content -- never inferred or guessed.
+  - Every fetched-but-not-confirming result is preserved as a logged
+    conflict; nothing is auto-resolved by which fact repeats more often.
+  - Respects robots.txt, rate-limits per domain, never bypasses CAPTCHAs,
+    logins, or anti-bot challenges -- those are recorded as inaccessible and
+    skipped, not retried or circumvented.
 """
 import json
-import re
 import sys
 import time
 import urllib.robotparser
@@ -33,14 +46,12 @@ from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_ex
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from app.crawler.public_sources import propublica_org_matches, wayback_snapshot_url  # noqa: E402
 from app.db import get_session, init_db  # noqa: E402
-from app.dedupe.normalize import normalize_event_name  # noqa: E402
-from app.ingest import upgrade_source_verification_level  # noqa: E402
-from app.models import Contact, Event, Organization  # noqa: E402
-from config import (  # noqa: E402
-    MIN_SECONDS_BETWEEN_REQUESTS_PER_DOMAIN, REQUEST_TIMEOUT_SECONDS,
-    SOURCE_VERIFICATION_LEVELS, USER_AGENT,
-)
+from app.dedupe.normalize import normalize_event_name, normalize_url  # noqa: E402
+from app.ingest import add_evidence, compute_verification_level_from_evidence  # noqa: E402
+from app.models import Contact, Event, Evidence, Organization  # noqa: E402
+from config import MIN_SECONDS_BETWEEN_REQUESTS_PER_DOMAIN, REQUEST_TIMEOUT_SECONDS, USER_AGENT  # noqa: E402
 
 VERIFICATION_SCOPE_STATE = "FL"  # hard-coded safety net: this script must never touch other states
 
@@ -48,10 +59,14 @@ ANTI_BOT_MARKERS = (
     "captcha", "cloudflare", "are you a human", "access denied",
     "attention required", "verify you are human", "checking your browser",
 )
+_PAGE_CONTENT_LEVELS = {"SOURCE_PAGE_VERIFIED", "ARCHIVED_SOURCE_VERIFIED"}
 
 _robots_cache: dict[str, urllib.robotparser.RobotFileParser | None] = {}
 _last_fetch_per_domain: dict[str, float] = {}
 _page_cache: dict[str, dict] = {}
+_json_cache: dict[str, dict] = {}
+_wayback_lookups = 0
+_propublica_lookups = 0
 
 
 def _robots_allowed(url: str) -> bool:
@@ -60,14 +75,10 @@ def _robots_allowed(url: str) -> bool:
     if base not in _robots_cache:
         rp = urllib.robotparser.RobotFileParser()
         try:
-            # Fetch via httpx (not RobotFileParser.read(), which uses urllib and
-            # does not reliably honor our timeout/proxy config) so a missing or
-            # slow robots.txt can never hang the run.
             resp = httpx.get(base + "/robots.txt", headers={"User-Agent": USER_AGENT},
                               timeout=REQUEST_TIMEOUT_SECONDS, follow_redirects=True)
-            if resp.status_code >= 400:
-                rp = None  # no robots.txt -- most sites with none permit crawling
-            else:
+            rp = None if resp.status_code >= 400 else rp
+            if rp is not None:
                 rp.parse(resp.text.splitlines())
         except Exception:
             rp = None
@@ -95,50 +106,62 @@ def _get(url: str) -> httpx.Response:
     return httpx.get(url, headers={"User-Agent": USER_AGENT}, timeout=REQUEST_TIMEOUT_SECONDS, follow_redirects=True)
 
 
-def fetch_page(url: str) -> dict:
-    """Returns {"ok": bool, "text": str | None, "reason": str | None}. Cached per URL per run."""
-    if url in _page_cache:
-        return _page_cache[url]
-
-    result = {"ok": False, "text": None, "reason": None}
-
+def _raw_fetch(url: str) -> tuple[bool, str | None, str | None]:
+    """Shared robots+rate-limit+retry fetch used by both fetch_page and
+    fetch_json. Returns (ok, raw_text, reason)."""
     if not _robots_allowed(url):
-        result["reason"] = "DISALLOWED_BY_ROBOTS_TXT"
-        _page_cache[url] = result
-        return result
-
+        return False, None, "DISALLOWED_BY_ROBOTS_TXT"
     _rate_limit(urlparse(url).netloc)
-
     try:
         resp = _get(url)
     except httpx.TransportError as e:
-        result["reason"] = f"NETWORK_ERROR:{e.__class__.__name__}"
-        _page_cache[url] = result
-        return result
-
+        return False, None, f"NETWORK_ERROR:{e.__class__.__name__}"
     if resp.status_code in (401, 403):
-        result["reason"] = f"ACCESS_DENIED_HTTP_{resp.status_code}"
-    elif resp.status_code == 429:
-        result["reason"] = "RATE_LIMITED_HTTP_429"
-    elif resp.status_code >= 400:
-        result["reason"] = f"HTTP_{resp.status_code}"
-    else:
-        lower = resp.text.lower()
-        if any(marker in lower for marker in ANTI_BOT_MARKERS):
-            result["reason"] = "ANTI_BOT_CHALLENGE_DETECTED"
-        else:
-            try:
-                visible_text = BeautifulSoup(resp.text, "html.parser").get_text(" ", strip=True)
-            except Exception:
-                visible_text = resp.text
-            result["ok"] = True
-            result["text"] = visible_text
+        return False, None, f"ACCESS_DENIED_HTTP_{resp.status_code}"
+    if resp.status_code == 429:
+        return False, None, "RATE_LIMITED_HTTP_429"
+    if resp.status_code >= 400:
+        return False, None, f"HTTP_{resp.status_code}"
+    lower = resp.text.lower()
+    if any(marker in lower for marker in ANTI_BOT_MARKERS):
+        return False, None, "ANTI_BOT_CHALLENGE_DETECTED"
+    return True, resp.text, None
 
+
+def fetch_page(url: str) -> dict:
+    """Returns {"ok", "text" (visible text), "reason"}. Cached per URL per run."""
+    if url in _page_cache:
+        return _page_cache[url]
+    ok, raw, reason = _raw_fetch(url)
+    if ok:
+        try:
+            visible = BeautifulSoup(raw, "html.parser").get_text(" ", strip=True)
+        except Exception:
+            visible = raw
+        result = {"ok": True, "text": visible, "reason": None}
+    else:
+        result = {"ok": False, "text": None, "reason": reason}
     _page_cache[url] = result
     return result
 
 
-def _normalized_contains(haystack: str, needle: str) -> bool:
+def fetch_json(url: str) -> dict:
+    """Returns {"ok", "data" (parsed JSON), "reason"}. Cached per URL per run."""
+    if url in _json_cache:
+        return _json_cache[url]
+    ok, raw, reason = _raw_fetch(url)
+    if ok:
+        try:
+            result = {"ok": True, "data": json.loads(raw), "reason": None}
+        except json.JSONDecodeError:
+            result = {"ok": False, "data": None, "reason": "INVALID_JSON_RESPONSE"}
+    else:
+        result = {"ok": False, "data": None, "reason": reason}
+    _json_cache[url] = result
+    return result
+
+
+def _normalized_contains(haystack: str | None, needle: str) -> bool:
     if not haystack or not needle:
         return False
     return normalize_event_name(needle) in normalize_event_name(haystack)
@@ -158,97 +181,196 @@ def _date_appears(event_date, text: str) -> bool:
     return any(normalize_event_name(c) in normalized_text for c in candidates)
 
 
-def verify_organization(org: Organization, inaccessible: dict, conflicts: list) -> None:
-    if not org.website:
-        return
-    res = fetch_page(org.website)
-    if not res["ok"]:
-        inaccessible[org.website] = res["reason"]
-        return
-    if _normalized_contains(res["text"], org.organization_name):
-        upgrade_source_verification_level(org, "SOURCE_PAGE_VERIFIED")
-    else:
-        conflicts.append(
-            f"ORG '{org.organization_name}': organization name not found on its own website "
-            f"homepage ({org.website}) -- needs manual review"
+def _excerpt(text: str | None, needle: str, window: int = 150) -> str:
+    if not text:
+        return ""
+    idx = text.lower().find(needle.lower().strip())
+    if idx == -1:
+        return text[:300].strip()
+    start = max(0, idx - window // 2)
+    end = min(len(text), idx + len(needle) + window // 2)
+    return text[start:end].strip()
+
+
+def _candidate_urls(*urls: str | None) -> list[str]:
+    """Dedup possibly-None/NOT_FOUND URLs by normalized form, first-seen kept."""
+    seen: set[str] = set()
+    result = []
+    for u in urls:
+        if not u or u == "NOT_FOUND":
+            continue
+        key = normalize_url(u)
+        if key in seen:
+            continue
+        seen.add(key)
+        result.append(u)
+    return result
+
+
+def _try_live_then_archive(session, *, entity_type: str, entity_id: int, claim: str, url: str,
+                            match_fn, inaccessible: dict, conflicts: list, label: str) -> tuple[bool, str | None]:
+    """Live fetch first; on failure, a Wayback snapshot of the SAME url --
+    never a substitute page. Returns (confirmed, source_type_used)."""
+    global _wayback_lookups
+    live = fetch_page(url)
+    if live["ok"]:
+        confirmed, excerpt = match_fn(live["text"])
+        add_evidence(session, entity_type=entity_type, entity_id=entity_id, claim=claim,
+                     source_url=url, source_type="LIVE_SOURCE", confirmed=confirmed, excerpt=excerpt)
+        if not confirmed:
+            conflicts.append(f"{label}: fetched {url} but could not confirm the claim in its content -- needs manual review")
+        return confirmed, "LIVE_SOURCE"
+
+    inaccessible[url] = live["reason"]
+
+    _wayback_lookups += 1
+    snapshot_url = wayback_snapshot_url(fetch_json, url)
+    if not snapshot_url:
+        return False, None
+    archived = fetch_page(snapshot_url)
+    if not archived["ok"]:
+        inaccessible[snapshot_url] = archived["reason"]
+        return False, None
+    confirmed, excerpt = match_fn(archived["text"])
+    add_evidence(session, entity_type=entity_type, entity_id=entity_id, claim=claim,
+                 source_url=snapshot_url, source_type="ARCHIVED_SOURCE", confirmed=confirmed, excerpt=excerpt)
+    if not confirmed:
+        conflicts.append(f"{label}: archived snapshot of {url} ({snapshot_url}) did not confirm the claim -- needs manual review")
+    return confirmed, "ARCHIVED_SOURCE"
+
+
+def verify_organization(session, org: Organization, inaccessible: dict, conflicts: list) -> None:
+    global _propublica_lookups
+    claim = "org_identity"
+
+    def matcher(text):
+        hit = _normalized_contains(text, org.organization_name)
+        return hit, (_excerpt(text, org.organization_name) if hit else (text[:300].strip() if text else ""))
+
+    confirmed_live_or_archived = False
+    if org.website:
+        confirmed, source_type = _try_live_then_archive(
+            session, entity_type="organization", entity_id=org.organization_id, claim=claim,
+            url=org.website, match_fn=matcher, inaccessible=inaccessible, conflicts=conflicts,
+            label=f"ORG '{org.organization_name}'",
         )
+        confirmed_live_or_archived = confirmed and source_type in ("LIVE_SOURCE", "ARCHIVED_SOURCE")
+
+    if not confirmed_live_or_archived:
+        # Live (and archived) fetch of the org's own site did not confirm identity --
+        # fall back to a public-record registry. Never used for event claims (see verify_event).
+        _propublica_lookups += 1
+        matches = propublica_org_matches(fetch_json, org.organization_name)
+        best = next(
+            (m for m in matches if m.get("name")
+             and (_normalized_contains(m["name"], org.organization_name) or _normalized_contains(org.organization_name, m["name"]))
+             and (not org.state or not m.get("state") or m["state"] == org.state)),
+            None,
+        )
+        if best:
+            excerpt = f'ProPublica Nonprofit Explorer: "{best["name"]}" -- EIN {best["ein"]}, {best.get("city") or "?"}, {best.get("state") or "?"}'
+            add_evidence(session, entity_type="organization", entity_id=org.organization_id, claim=claim,
+                         source_url=best["profile_url"] or "https://projects.propublica.org/nonprofits/",
+                         source_type="PUBLIC_RECORD", confirmed=True, excerpt=excerpt)
+        else:
+            conflicts.append(f"ORG '{org.organization_name}': no matching ProPublica Nonprofit Explorer record found")
+
+    org.source_verification_level = compute_verification_level_from_evidence(
+        session, entity_type="organization", entity_id=org.organization_id, claim=claim)
 
 
-def _upgrade_level_field(entity, field_name: str, new_level: str) -> None:
-    current = getattr(entity, field_name) or "NOT_FOUND"
-    if SOURCE_VERIFICATION_LEVELS.index(new_level) < SOURCE_VERIFICATION_LEVELS.index(current):
-        setattr(entity, field_name, new_level)
-
-
-def verify_event(event: Event, org: Organization, inaccessible: dict, conflicts: list) -> None:
-    """Per requirement: an event can only reach SOURCE_PAGE_VERIFIED by successfully
-    fetching its fundraiser_url (the best fundraiser-specific page) and confirming
-    the event details on it -- event_url/org homepage are not substitutes."""
+def verify_event(session, event: Event, inaccessible: dict, conflicts: list) -> None:
+    claim = "event_name_date"
     event.fundraiser_url_last_checked = datetime.now(timezone.utc)
 
-    if not event.fundraiser_url or event.fundraiser_url == "NOT_FOUND":
-        conflicts.append(
-            f"EVENT '{event.event_name}': no fundraiser_url on file -- cannot reach "
-            f"SOURCE_PAGE_VERIFIED until a fundraiser-specific page is identified; flagged for review"
-        )
-        return
+    def matcher(text):
+        name_hit = _normalized_contains(text, event.event_name)
+        date_hit = _date_appears(event.event_date, text) if event.event_date else True
+        confirmed = name_hit and date_hit
+        excerpt = _excerpt(text, event.event_name) if name_hit else (text[:300].strip() if text else "")
+        return confirmed, excerpt
 
-    res = fetch_page(event.fundraiser_url)
-    if not res["ok"]:
-        inaccessible[event.fundraiser_url] = res["reason"]
-        return
-
-    name_hit = _normalized_contains(res["text"], event.event_name)
-    date_hit = _date_appears(event.event_date, res["text"]) if event.event_date else None
-
-    if name_hit and (date_hit is None or date_hit):
-        upgrade_source_verification_level(event, "SOURCE_PAGE_VERIFIED")
-        _upgrade_level_field(event, "fundraiser_url_verification_level", "SOURCE_PAGE_VERIFIED")
-    elif name_hit and date_hit is False:
-        conflicts.append(
-            f"EVENT '{event.event_name}': fundraiser page confirmed at {event.fundraiser_url}, but "
-            f"stored date {event.event_date} could not be matched in the page text -- left at "
-            f"{event.source_verification_level}, needs manual review"
-        )
+    candidates = _candidate_urls(event.fundraiser_url, event.event_url, event.discovery_source_url, event.ticket_url)
+    if not candidates:
+        conflicts.append(f"EVENT '{event.event_name}': no fundraiser_url or other event URL on file -- flagged for review")
     else:
-        conflicts.append(
-            f"EVENT '{event.event_name}': event name not found on cited fundraiser_url "
-            f"({event.fundraiser_url}) -- left at {event.source_verification_level}, needs manual review"
-        )
-
-
-def verify_contact(contact: Contact, inaccessible: dict, conflicts: list) -> None:
-    urls = [u for u in {contact.email_source_url, contact.contact_source_url, contact.contact_page_url} if u]
-    if not urls:
-        return
-
-    full_name = f"{contact.first_name or ''} {contact.last_name or ''}".strip()
-
-    for url in urls:
-        res = fetch_page(url)
-        if not res["ok"]:
-            inaccessible[url] = res["reason"]
-            continue
-
-        page_text = res["text"]
-
-        if contact.email:
-            email_confirmed = contact.email.lower() in page_text.lower()
-            if email_confirmed:
-                upgrade_source_verification_level(contact, "SOURCE_PAGE_VERIFIED", email_confirmed=True)
-            else:
-                conflicts.append(
-                    f"CONTACT email '{contact.email}' ({full_name or contact.title}): not found on "
-                    f"cited source page ({url}) -- staying {contact.email_type}/"
-                    f"{contact.source_verification_level}, needs manual review"
-                )
-        elif full_name and _normalized_contains(page_text, full_name):
-            upgrade_source_verification_level(contact, "SOURCE_PAGE_VERIFIED")
-        elif full_name:
-            conflicts.append(
-                f"CONTACT '{full_name}' ({contact.title or 'no title'}): name not found on cited "
-                f"source page ({url}) -- needs manual review"
+        for url in candidates:
+            confirmed, source_type = _try_live_then_archive(
+                session, entity_type="event", entity_id=event.event_id, claim=claim, url=url,
+                match_fn=matcher, inaccessible=inaccessible, conflicts=conflicts,
+                label=f"EVENT '{event.event_name}'",
             )
+            if confirmed and source_type == "LIVE_SOURCE":
+                break  # already at the best possible level -- no need to hit further candidates
+
+    event.source_verification_level = compute_verification_level_from_evidence(
+        session, entity_type="event", entity_id=event.event_id, claim=claim)
+
+    # fundraiser_url_verification_level is scoped ONLY to that one URL (never the
+    # multi-URL aggregate above) -- it answers "is the clickable link itself confirmed?"
+    if event.fundraiser_url and event.fundraiser_url != "NOT_FOUND":
+        fu_key = normalize_url(event.fundraiser_url)
+        fu_rows = session.query(Evidence).filter(
+            Evidence.entity_type == "event", Evidence.entity_id == event.event_id,
+            Evidence.claim == claim, Evidence.source_url_normalized == fu_key,
+        ).all()
+        confirmed_fu = [r for r in fu_rows if r.confirmed]
+        if any(r.source_type == "LIVE_SOURCE" for r in confirmed_fu):
+            event.fundraiser_url_verification_level = "SOURCE_PAGE_VERIFIED"
+        elif any(r.source_type == "ARCHIVED_SOURCE" for r in confirmed_fu):
+            event.fundraiser_url_verification_level = "ARCHIVED_SOURCE_VERIFIED"
+        elif fu_rows:
+            event.fundraiser_url_verification_level = "UNVERIFIED"
+        else:
+            event.fundraiser_url_verification_level = "NOT_FOUND"
+
+
+def verify_contact(session, contact: Contact, inaccessible: dict, conflicts: list) -> None:
+    full_name = f"{contact.first_name or ''} {contact.last_name or ''}".strip()
+    candidates = _candidate_urls(contact.contact_page_url, contact.contact_source_url, contact.email_source_url)
+
+    if full_name:
+        identity_claim = f"contact_identity:{contact.contact_id}"
+
+        def name_matcher(text):
+            hit = _normalized_contains(text, full_name)
+            return hit, (_excerpt(text, full_name) if hit else (text[:300].strip() if text else ""))
+
+        for url in candidates:
+            confirmed, source_type = _try_live_then_archive(
+                session, entity_type="contact", entity_id=contact.contact_id, claim=identity_claim, url=url,
+                match_fn=name_matcher, inaccessible=inaccessible, conflicts=conflicts,
+                label=f"CONTACT '{full_name}'",
+            )
+            if confirmed and source_type == "LIVE_SOURCE":
+                break
+        contact.source_verification_level = compute_verification_level_from_evidence(
+            session, entity_type="contact", entity_id=contact.contact_id, claim=identity_claim)
+    else:
+        contact.source_verification_level = "NOT_FOUND"  # general-org contact -- no named identity to verify
+
+    if contact.email:
+        email_claim = f"contact_email:{contact.email.lower()}"
+
+        def email_matcher(text):
+            hit = contact.email.lower() in (text or "").lower()
+            return hit, (_excerpt(text, contact.email) if hit else (text[:300].strip() if text else ""))
+
+        for url in candidates:
+            confirmed, source_type = _try_live_then_archive(
+                session, entity_type="contact", entity_id=contact.contact_id, claim=email_claim, url=url,
+                match_fn=email_matcher, inaccessible=inaccessible, conflicts=conflicts,
+                label=f"CONTACT email '{contact.email}'",
+            )
+            if confirmed and source_type == "LIVE_SOURCE":
+                break
+        email_level = compute_verification_level_from_evidence(
+            session, entity_type="contact", entity_id=contact.contact_id, claim=email_claim)
+        contact.email_verification_level = email_level
+        if email_level in _PAGE_CONTENT_LEVELS and contact.email_type != "GENERAL_ORGANIZATION":
+            contact.email_type = "VERIFIED_PUBLIC"
+    else:
+        contact.email_verification_level = "NOT_FOUND"
 
 
 def main():
@@ -263,25 +385,28 @@ def main():
         print(f"No {VERIFICATION_SCOPE_STATE} events found in the database -- nothing to verify.")
         return
 
-    seen_org_ids = set()
+    seen_org_ids: set[int] = set()
     for event in events:
         org = session.get(Organization, event.organization_id)
-
         if org.organization_id not in seen_org_ids:
-            verify_organization(org, inaccessible, conflicts)
+            verify_organization(session, org, inaccessible, conflicts)
             seen_org_ids.add(org.organization_id)
 
-        verify_event(event, org, inaccessible, conflicts)
+        verify_event(session, event, inaccessible, conflicts)
 
         for contact in session.query(Contact).filter(Contact.organization_id == org.organization_id).all():
-            verify_contact(contact, inaccessible, conflicts)
+            verify_contact(session, contact, inaccessible, conflicts)
 
     session.commit()
 
+    evidence_total = session.query(Evidence).count()
     log = {
         "run_at": datetime.now(timezone.utc).isoformat(),
-        "scope": f"state={VERIFICATION_SCOPE_STATE} only, {len(events)} events",
-        "urls_fetched_ok": sum(1 for r in _page_cache.values() if r["ok"]),
+        "scope": f"state={VERIFICATION_SCOPE_STATE} only, {len(events)} events (Phase A: no search API, no new leads)",
+        "pages_fetched_ok": sum(1 for r in _page_cache.values() if r["ok"]),
+        "wayback_lookups_attempted": _wayback_lookups,
+        "propublica_lookups_attempted": _propublica_lookups,
+        "evidence_rows_total": evidence_total,
         "urls_inaccessible": len(inaccessible),
         "inaccessible_urls": inaccessible,
         "conflicts": conflicts,
@@ -290,9 +415,10 @@ def main():
     log_path.write_text(json.dumps(log, indent=2))
 
     session.close()
-    print(f"Verification pass complete. Fetched {log['urls_fetched_ok']} pages OK, "
-          f"{log['urls_inaccessible']} inaccessible, {len(conflicts)} conflicts. "
-          f"Log written to {log_path}.")
+    print(f"Verification pass complete. {log['pages_fetched_ok']} pages fetched OK, "
+          f"{_wayback_lookups} Wayback lookups attempted, {_propublica_lookups} ProPublica lookups attempted, "
+          f"{evidence_total} evidence rows on file, {log['urls_inaccessible']} URLs inaccessible, "
+          f"{len(conflicts)} conflicts. Log written to {log_path}.")
 
 
 if __name__ == "__main__":

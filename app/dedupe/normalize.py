@@ -51,6 +51,34 @@ def normalize_domain(website: str) -> str | None:
     return netloc or None
 
 
+_WAYBACK_WRAPPER_RE = re.compile(r"^https?://web\.archive\.org/web/\d+[a-z_]*/(https?://.+)$", re.IGNORECASE)
+
+
+def normalize_url(url: str) -> str:
+    """Canonical form used to decide whether two evidence rows point at the
+    SAME underlying page (required before they can count as independent
+    sources for MULTI_SOURCE_CONFIRMED). Unwraps a Wayback Machine snapshot to
+    its original URL first -- an archived copy and a live copy of the same
+    page are the same underlying source, not two independent ones -- then
+    drops scheme, "www.", query string, fragment, and trailing slash.
+    """
+    if not url:
+        return ""
+    match = _WAYBACK_WRAPPER_RE.match(url.strip())
+    target = match.group(1) if match else url.strip()
+    if not target.startswith("http"):
+        target = "https://" + target
+    try:
+        parsed = urlparse(target)
+    except ValueError:
+        return target.lower()
+    netloc = parsed.netloc.lower()
+    if netloc.startswith("www."):
+        netloc = netloc[4:]
+    path = parsed.path.rstrip("/")
+    return f"{netloc}{path}".lower()
+
+
 def normalize_phone(phone: str) -> str | None:
     if not phone:
         return None

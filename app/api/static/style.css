@@ -31,6 +31,14 @@ tr:hover { background: #fafafa; }
 .badge-partial { background: #fff3cd; color: #8a6300; }
 .badge-review { background: #fbdada; color: #a3242c; }
 
+/* 6-tier verification levels, best to worst */
+.badge-source_page_verified { background: #d7f0dc; color: #1c5e2b; }
+.badge-archived_source_verified { background: #d3e9f7; color: #12496b; }
+.badge-multi_source_confirmed { background: #e2f0c8; color: #45601a; }
+.badge-search_result_supported { background: #fff3cd; color: #8a6300; }
+.badge-unverified { background: #f3e0c8; color: #8a4f00; }
+.badge-not_found { background: #fbdada; color: #a3242c; }
+
 .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
 .detail-section { border: 1px solid var(--border); border-radius: 8px; padding: 16px; margin-bottom: 16px; background: #fff; }
 .detail-section h3 { margin-top: 0; }

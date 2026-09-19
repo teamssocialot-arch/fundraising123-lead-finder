@@ -5,6 +5,11 @@ name: Verify Florida Stage 1 Sources
 # 10-lead Florida validation set: this workflow discovers nothing new, calls
 # no search API, and touches no state other than FL (also enforced inside
 # scripts/verify_sources.py itself as a second safety net).
+#
+# PHASE A: verification uses only free, no-API-key public sources (direct
+# fetch, Wayback Machine, ProPublica Nonprofit Explorer) -- no Google/Bing
+# search API, no scraping proxy, no anti-bot-bypass or contact-guessing
+# service of any kind. Nothing in this workflow requires a secret.
 on:
   workflow_dispatch: {}
 
@@ -43,13 +48,20 @@ jobs:
       - name: Generate QA report
         run: python scripts/qa_report.py | tee qa_report_output.txt
 
-      - name: Upload QA report and verification log as downloadable artifacts
+      # No GOOGLE_SHEETS_* secrets are configured yet, so this always runs in
+      # dry-run mode: it writes a local CSV preview of exactly what would be
+      # pushed to a Sheet, without calling any Google API.
+      - name: Build Google Sheets export preview (dry run -- no credentials configured)
+        run: python scripts/export_to_sheets.py
+
+      - name: Upload QA report, verification log, and Sheets preview as downloadable artifacts
         uses: actions/upload-artifact@v4
         with:
           name: florida-stage1-verification-results
           path: |
             qa_report_output.txt
             data/verification_log.json
+            data/sheets_export_preview.csv
           retention-days: 90
 
       - name: Commit updated database and verification log back to the repo

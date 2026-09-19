@@ -107,6 +107,7 @@ def load_file(path: str):
                 email_source_url=contact_data.get("email_source_url"),
                 contact_source_url=contact_data.get("contact_source_url"),
                 source_verification_level=contact_data.get("source_verification_level", "UNVERIFIED"),
+                email_verification_level=contact_data.get("email_verification_level"),
             )
             stats["contacts_created"] += 1
             first_contact = first_contact or contact

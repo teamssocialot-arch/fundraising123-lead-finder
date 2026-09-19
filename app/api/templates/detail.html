@@ -6,11 +6,12 @@
 <p>
   {% if event.fundraiser_url and event.fundraiser_url != 'NOT_FOUND' %}
   <a class="btn-fundraiser-large" href="{{ event.fundraiser_url }}" target="_blank" rel="noopener noreferrer">VIEW FUNDRAISER</a>
-  <span class="field k" style="margin-left:10px;">({{ event.fundraiser_url_type or "n/a" }}, level: {{ event.fundraiser_url_verification_level }})</span>
+  <span class="badge badge-{{ event.fundraiser_url_verification_level|lower }}" style="margin-left:10px;">{{ event.fundraiser_url_type or "n/a" }}: {{ event.fundraiser_url_verification_level }}</span>
   {% else %}
-  <span class="badge badge-review">FUNDRAISER URL NOT FOUND -- flagged for review</span>
+  <span class="badge badge-not_found">FUNDRAISER URL NOT FOUND -- flagged for review</span>
   {% endif %}
 </p>
+<p><strong>Evidence:</strong> {{ evidence.summary }}</p>
 
 <div class="detail-grid">
   <div class="detail-section">
@@ -20,7 +21,7 @@
     <div class="field"><div class="k">Type</div><div class="v">{{ org.organization_type or "-" }}</div></div>
     <div class="field"><div class="k">Address</div><div class="v">{{ org.address or "-" }}, {{ org.city }}, {{ org.state }} {{ org.zip or "" }}</div></div>
     <div class="field"><div class="k">Phone</div><div class="v">{{ org.phone or "NOT FOUND" }}</div></div>
-    <div class="field"><div class="k">Source verification level</div><div class="v">{{ org.source_verification_level }}</div></div>
+    <div class="field"><div class="k">Source verification level</div><div class="v"><span class="badge badge-{{ org.source_verification_level|lower }}">{{ org.source_verification_level }}</span></div></div>
   </div>
 
   <div class="detail-section">
@@ -54,13 +55,15 @@
   <div class="detail-section">
     <h3>Contacts</h3>
     {% for c in contacts %}
+      {% if loop.first %}<div class="field"><span class="badge badge-verified">MOST RELEVANT</span></div>{% endif %}
       <div class="field"><div class="k">Name / Title</div><div class="v">{{ c.first_name or "" }} {{ c.last_name or "" }} — {{ c.title or "n/a" }}</div></div>
       <div class="field"><div class="k">Email ({{ c.email_type }})</div><div class="v">{{ c.email or "NOT FOUND" }}</div></div>
       <div class="field"><div class="k">Phone</div><div class="v">{{ c.phone or "NOT FOUND" }}</div></div>
       <div class="field"><div class="k">Contact source URL</div><div class="v"><a class="source-link" href="{{ c.contact_source_url }}">{{ c.contact_source_url or "-" }}</a></div></div>
       <div class="field"><div class="k">Email source URL</div><div class="v"><a class="source-link" href="{{ c.email_source_url }}">{{ c.email_source_url or "-" }}</a></div></div>
       <div class="field"><div class="k">Verification status</div><div class="v">{{ c.verification_status }}</div></div>
-      <div class="field"><div class="k">Source verification level</div><div class="v">{{ c.source_verification_level }}</div></div>
+      <div class="field"><div class="k">Identity verification level</div><div class="v"><span class="badge badge-{{ c.source_verification_level|lower }}">{{ c.source_verification_level }}</span></div></div>
+      <div class="field"><div class="k">Email verification level</div><div class="v"><span class="badge badge-{{ c.email_verification_level|lower }}">{{ c.email_verification_level }}</span></div></div>
       <hr>
     {% else %}
       <p>No contact found yet.</p>
@@ -71,10 +74,33 @@
 <div class="detail-section">
   <h3>Status</h3>
   <div class="field"><div class="k">Verification status (record completeness)</div><div class="v">{{ event.verification_status }}</div></div>
-  <div class="field"><div class="k">Source verification level (how facts were confirmed)</div><div class="v">{{ event.source_verification_level }}</div></div>
+  <div class="field"><div class="k">Overall verification level (how facts were confirmed)</div><div class="v"><span class="badge badge-{{ event.source_verification_level|lower }}">{{ event.source_verification_level }}</span></div></div>
   <div class="field"><div class="k">Lead status</div><div class="v">{{ event.lead_status }}</div></div>
   <div class="field"><div class="k">Discovery source</div><div class="v">{{ event.discovery_source or "-" }}</div></div>
   <div class="field"><div class="k">Notes</div><div class="v">{{ event.notes or "-" }}</div></div>
+</div>
+
+<div class="detail-section">
+  <h3>Evidence ({{ evidence.count }} independent source{{ "s" if evidence.count != 1 else "" }})</h3>
+  {% if evidence_rows %}
+  <table>
+    <thead><tr><th>Claim</th><th>Source Type</th><th>Confirmed</th><th>Source URL</th><th>Excerpt</th><th>Checked</th></tr></thead>
+    <tbody>
+      {% for ev in evidence_rows %}
+      <tr>
+        <td>{{ ev.claim }}</td>
+        <td>{{ ev.source_type }}</td>
+        <td><span class="badge badge-{{ 'verified' if ev.confirmed else 'review' }}">{{ "YES" if ev.confirmed else "NO" }}</span></td>
+        <td><a class="source-link" href="{{ ev.source_url }}" target="_blank" rel="noopener noreferrer">{{ ev.source_url }}</a></td>
+        <td class="source-link">{{ ev.excerpt or "-" }}</td>
+        <td>{{ ev.fetched_at }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p>No verification pass has run against this lead yet.</p>
+  {% endif %}
 </div>
 
 {% if other_events %}

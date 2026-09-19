@@ -34,12 +34,52 @@ FUNDRAISER_URL_TYPES = (
     "THIRD_PARTY_EVENT_LISTING",
 )
 
-SOURCE_VERIFICATION_LEVELS = (
-    "SOURCE_PAGE_VERIFIED",    # the source page was actually fetched and the fact confirmed on it
-    "SEARCH_RESULT_SUPPORTED", # the fact appears in a search result/snippet; underlying page not fetched
-    "UNVERIFIED",              # could not be independently confirmed by either method
-    "NOT_FOUND",               # no information was found at all
+EVIDENCE_SOURCE_TYPES = (
+    "LIVE_SOURCE",     # fetched directly from the still-live target page
+    "ARCHIVED_SOURCE", # fetched from a legitimate public archive (e.g. Wayback Machine) of the target page
+    "SEARCH_RESULT",   # a search-engine indexed snippet, underlying page not (successfully) fetched
+    "PUBLIC_RECORD",   # a public-record registry (e.g. ProPublica Nonprofit Explorer / IRS data) -- org identity only
 )
+
+# Ordered best-to-worst. A claim's level is COMPUTED from its Evidence rows
+# (see app.ingest.compute_verification_level_from_evidence), never asserted
+# directly, so this list is also the ranking used to decide upgrades.
+VERIFICATION_LEVELS = (
+    "SOURCE_PAGE_VERIFIED",     # >=1 LIVE_SOURCE evidence row confirms the claim
+    "ARCHIVED_SOURCE_VERIFIED", # no successful live fetch, but an ARCHIVED_SOURCE (Wayback) row confirms it --
+                                 # kept distinct from SOURCE_PAGE_VERIFIED per explicit requirement: an archived
+                                 # snapshot is not indistinguishable from a currently-accessible live source.
+    "MULTI_SOURCE_CONFIRMED",   # no direct/archived fetch, but >=2 evidence rows with DISTINCT normalized
+                                 # source URLs independently confirm the same claim
+    "SEARCH_RESULT_SUPPORTED",  # exactly one evidence row, snippet-only
+    "UNVERIFIED",               # evidence exists but is insufficient or contradictory
+    "NOT_FOUND",                # no evidence at all
+)
+
+# Backward-compatible alias; existing columns/validators were written against this name.
+SOURCE_VERIFICATION_LEVELS = VERIFICATION_LEVELS
+
+# Contact relevance ranking (lower = more relevant), independent of how well-verified
+# a contact is -- used so a highly relevant event contact is never displaced by an
+# easier-to-verify executive. Matched against contact.title, case-insensitive substring.
+CONTACT_ROLE_PRIORITY = (
+    ("event_contact", ("event contact", "fundraiser contact", "gala contact", "event chair", "gala chair")),
+    ("development_director", ("development director",)),
+    ("director_of_development", ("director of development",)),
+    ("events_director", ("events director", "special events manager", "special events director")),
+    ("fundraising_director", ("fundraising director", "fundraising coordinator")),
+    ("executive_director", ("executive director", "ceo", "chief executive")),
+    ("other_named_contact", ()),  # fallback for any other named person -- matches nothing, always last resort
+    ("general_organization", ()),  # fallback for contacts with no name at all
+)
+
+# Free, no-API-key public sources used for corroboration when a live fetch is
+# blocked. Neither bypasses any access control: Wayback serves archives the
+# Internet Archive's own crawler already legitimately collected; ProPublica
+# serves public IRS Form 990 filing data. Used ONLY as described in
+# scripts/verify_sources.py -- ProPublica never counts as event evidence.
+WAYBACK_AVAILABILITY_URL = "https://archive.org/wayback/available"
+PROPUBLICA_NONPROFIT_SEARCH_URL = "https://projects.propublica.org/nonprofits/api/v2/search.json"
 
 TIMING_BUCKETS = [
     (0, 30, "0-30 days"),

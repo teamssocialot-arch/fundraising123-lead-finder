@@ -29,8 +29,11 @@ class Contact(Base):
     contact_source_url = Column(String, nullable=True)
 
     verification_status = Column(String, default="NEEDS_REVIEW")  # record completeness only (name/title/source present)
-    # SOURCE_PAGE_VERIFIED / SEARCH_RESULT_SUPPORTED / UNVERIFIED / NOT_FOUND -- how the contact/email was actually confirmed
+    # How the contact's NAME/TITLE (identity) was confirmed -- see config.VERIFICATION_LEVELS
     source_verification_level = Column(String, default="UNVERIFIED")
+    # How the literal EMAIL ADDRESS was confirmed -- distinct from identity: a
+    # contact's name can be page-verified while their email remains unconfirmed, or vice versa.
+    email_verification_level = Column(String, default="NOT_FOUND")
     last_verified = Column(DateTime(timezone=True), nullable=True)
 
     created_at = Column(DateTime(timezone=True), default=_now)

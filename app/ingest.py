@@ -10,11 +10,20 @@ and dedup guarantees are exercised identically.
 import json
 from datetime import date, datetime, timezone
 
+from sqlalchemy import and_, or_
 from sqlalchemy.orm import Session
 
-from app.dedupe.normalize import normalize_domain, normalize_event_name, normalize_org_name, normalize_phone
-from app.models import Contact, Event, LeadActivity, Organization, RecheckQueue, Source
-from config import ALLOWED_STATES, FUNDRAISER_URL_TYPES, SOURCE_VERIFICATION_LEVELS, TIMING_BUCKETS
+from app.dedupe.normalize import normalize_domain, normalize_event_name, normalize_org_name, normalize_phone, normalize_url
+from app.models import Contact, Event, Evidence, LeadActivity, Organization, RecheckQueue, Source
+from config import (
+    ALLOWED_STATES, CONTACT_ROLE_PRIORITY, EVIDENCE_SOURCE_TYPES, FUNDRAISER_URL_TYPES,
+    SOURCE_VERIFICATION_LEVELS, TIMING_BUCKETS, VERIFICATION_LEVELS,
+)
+
+# Levels strong enough to back a VERIFIED_PUBLIC email claim: the literal
+# address was read directly from a page's actual content (live or archived),
+# not inferred from a search snippet.
+_PAGE_CONTENT_LEVELS = {"SOURCE_PAGE_VERIFIED", "ARCHIVED_SOURCE_VERIFIED"}
 
 
 class IngestError(ValueError):
@@ -223,19 +232,24 @@ def add_contact(session: Session, *, organization: Organization, first_name: str
                  email_type: str = "NOT_FOUND", phone: str | None = None,
                  contact_page_url: str | None = None, email_source_url: str | None = None,
                  contact_source_url: str | None = None,
-                 source_verification_level: str = "UNVERIFIED") -> Contact:
+                 source_verification_level: str = "UNVERIFIED",
+                 email_verification_level: str | None = None) -> Contact:
     if email and email_type == "NOT_FOUND":
         # An email value implies it was actually found somewhere -- classification bug if left NOT_FOUND.
         raise IngestError("email provided but email_type is NOT_FOUND")
     if email and not email_source_url:
         raise IngestError("email provided without an email_source_url -- cannot claim it's public/sourced")
     _check_source_verification_level(source_verification_level)
-    if email_type == "VERIFIED_PUBLIC" and source_verification_level != "SOURCE_PAGE_VERIFIED":
-        # VERIFIED_PUBLIC asserts the email was confirmed on a legitimate public source page.
-        # A search-result snippet alone is not sufficient evidence for that claim.
+    if email_verification_level is None:
+        email_verification_level = "UNVERIFIED" if email else "NOT_FOUND"
+    _check_source_verification_level(email_verification_level)
+    if email_type == "VERIFIED_PUBLIC" and email_verification_level not in _PAGE_CONTENT_LEVELS:
+        # VERIFIED_PUBLIC asserts the literal email was read directly from a page's
+        # actual content (live or archived). A search snippet or multi-source
+        # inference alone is not sufficient evidence for that specific claim.
         raise IngestError(
-            "email_type VERIFIED_PUBLIC requires source_verification_level=SOURCE_PAGE_VERIFIED "
-            "(the source page must have actually been fetched and the email confirmed on it)"
+            f"email_type VERIFIED_PUBLIC requires email_verification_level in {sorted(_PAGE_CONTENT_LEVELS)} "
+            "(the literal email must have been read directly from a fetched page's content)"
         )
 
     verification_status = "VERIFIED" if email_type == "VERIFIED_PUBLIC" and email_source_url else (
@@ -255,6 +269,7 @@ def add_contact(session: Session, *, organization: Organization, first_name: str
         contact_source_url=contact_source_url,
         verification_status=verification_status,
         source_verification_level=source_verification_level,
+        email_verification_level=email_verification_level,
         last_verified=datetime.now(timezone.utc) if email or first_name else None,
     )
     session.add(contact)
@@ -277,7 +292,8 @@ def upgrade_source_verification_level(entity, new_level: str, *, email_confirmed
     changed = SOURCE_VERIFICATION_LEVELS.index(new_level) < SOURCE_VERIFICATION_LEVELS.index(current)
     if changed:
         entity.source_verification_level = new_level
-    if isinstance(entity, Contact) and entity.email and new_level == "SOURCE_PAGE_VERIFIED" and email_confirmed:
+    if isinstance(entity, Contact) and entity.email and new_level in _PAGE_CONTENT_LEVELS and email_confirmed:
+        entity.email_verification_level = new_level
         if entity.email_type != "GENERAL_ORGANIZATION":
             entity.email_type = "VERIFIED_PUBLIC"
             changed = True
@@ -313,6 +329,141 @@ def log_activity(session: Session, *, activity_type: str, notes: str | None = No
     )
     session.add(activity)
     return activity
+
+
+def add_evidence(session: Session, *, entity_type: str, entity_id: int, claim: str,
+                  source_url: str, source_type: str, confirmed: bool,
+                  excerpt: str | None = None) -> Evidence:
+    """Append-only: one independent fact-check for one claim. Never overwrites
+    or deletes prior evidence -- conflicting findings are preserved side by
+    side so a human can inspect them, never auto-resolved by picking whichever
+    repeats more.
+    """
+    if entity_type not in ("event", "organization", "contact"):
+        raise IngestError(f"entity_type must be one of event/organization/contact, got {entity_type!r}")
+    if source_type not in EVIDENCE_SOURCE_TYPES:
+        raise IngestError(f"source_type must be one of {EVIDENCE_SOURCE_TYPES}, got {source_type!r}")
+    if confirmed and not excerpt:
+        raise IngestError("confirmed evidence requires a supporting excerpt")
+
+    if claim.startswith("contact_email:"):
+        claimed_email = claim.split(":", 1)[1].strip().lower()
+        if confirmed and (not excerpt or claimed_email not in excerpt.lower()):
+            raise IngestError(
+                f"confirmed email evidence for {claimed_email!r} but that literal address does not "
+                "appear in the excerpt -- refusing to record (never guess or infer an email)"
+            )
+
+    evidence = Evidence(
+        entity_type=entity_type,
+        entity_id=entity_id,
+        claim=claim,
+        source_url=source_url,
+        source_url_normalized=normalize_url(source_url),
+        source_type=source_type,
+        confirmed=confirmed,
+        excerpt=(excerpt or "")[:2000],
+    )
+    session.add(evidence)
+    session.flush()
+    return evidence
+
+
+def compute_verification_level_from_evidence(session: Session, *, entity_type: str, entity_id: int,
+                                              claim: str) -> str:
+    """The single source of truth for a claim's verification level -- always
+    derived from its Evidence rows, never asserted directly by a caller.
+
+    NOT_FOUND: no evidence at all was gathered for this claim.
+    UNVERIFIED: evidence-gathering was attempted but nothing confirmed the claim.
+    SEARCH_RESULT_SUPPORTED: exactly one independent confirmed source.
+    MULTI_SOURCE_CONFIRMED: >=2 confirmed sources with distinct normalized URLs
+      (two rows pointing at the same underlying page, live+archived or two
+      search engines echoing the same link, never count as two).
+    ARCHIVED_SOURCE_VERIFIED: a Wayback/archive snapshot of the actual claim
+      page confirmed it directly, even if the live page could not be reached.
+    SOURCE_PAGE_VERIFIED: the actual live page was fetched and confirmed it.
+    """
+    rows = session.query(Evidence).filter(
+        Evidence.entity_type == entity_type, Evidence.entity_id == entity_id, Evidence.claim == claim,
+    ).all()
+    if not rows:
+        return "NOT_FOUND"
+
+    confirmed = [r for r in rows if r.confirmed]
+    if any(r.source_type == "LIVE_SOURCE" for r in confirmed):
+        return "SOURCE_PAGE_VERIFIED"
+    if any(r.source_type == "ARCHIVED_SOURCE" for r in confirmed):
+        return "ARCHIVED_SOURCE_VERIFIED"
+    distinct_urls = {r.source_url_normalized for r in confirmed}
+    if len(distinct_urls) >= 2:
+        return "MULTI_SOURCE_CONFIRMED"
+    if confirmed:
+        return "SEARCH_RESULT_SUPPORTED"
+    return "UNVERIFIED"
+
+
+_EVIDENCE_SOURCE_LABELS = {
+    "LIVE_SOURCE": "Live page",
+    "ARCHIVED_SOURCE": "Archived page",
+    "SEARCH_RESULT": "Search result",
+    "PUBLIC_RECORD": "Public record",
+}
+
+
+def lead_evidence_summary(session: Session, *, event: Event, organization: Organization,
+                           contacts: list[Contact]) -> dict:
+    """Aggregate evidence across a whole lead (its event + organization + all
+    its contacts) for display, e.g. "3 sources | Live event page + archived
+    staff page + public record". Counts distinct normalized URLs only."""
+    contact_ids = [c.contact_id for c in contacts]
+    conditions = [
+        and_(Evidence.entity_type == "event", Evidence.entity_id == event.event_id),
+        and_(Evidence.entity_type == "organization", Evidence.entity_id == organization.organization_id),
+    ]
+    if contact_ids:
+        conditions.append(and_(Evidence.entity_type == "contact", Evidence.entity_id.in_(contact_ids)))
+
+    rows = session.query(Evidence).filter(or_(*conditions)).all()
+    confirmed = [r for r in rows if r.confirmed]
+    distinct_by_url: dict[str, Evidence] = {}
+    for r in confirmed:
+        distinct_by_url.setdefault(r.source_url_normalized, r)
+
+    count = len(distinct_by_url)
+    parts = [_EVIDENCE_SOURCE_LABELS.get(r.source_type, r.source_type) for r in distinct_by_url.values()]
+    summary = f"{count} source{'s' if count != 1 else ''}"
+    if parts:
+        summary += " | " + " + ".join(parts)
+    return {"count": count, "summary": summary, "urls": [r.source_url for r in distinct_by_url.values()]}
+
+
+def contact_role_rank(contact: Contact) -> int:
+    """Lower = more relevant to the fundraiser, per the user's explicit
+    priority order. Deliberately independent of source_verification_level --
+    a highly relevant named event contact must never be displaced by an
+    easier-to-verify but less relevant executive."""
+    title = (contact.title or "").lower()
+    if not (contact.first_name or contact.last_name):
+        return len(CONTACT_ROLE_PRIORITY) - 1  # "general_organization" bucket, always last
+    for rank, (_key, keywords) in enumerate(CONTACT_ROLE_PRIORITY):
+        if keywords and any(kw in title for kw in keywords):
+            return rank
+    return len(CONTACT_ROLE_PRIORITY) - 2  # "other_named_contact" -- named, but no recognized title
+
+
+def select_primary_contact(contacts: list[Contact]) -> Contact | None:
+    """Pick the single most relevant contact for summary views (dashboard
+    table, CSV, Sheet). Relevance always wins; verification level is only a
+    tiebreaker among contacts of equal relevance."""
+    if not contacts:
+        return None
+    level_rank = {level: i for i, level in enumerate(VERIFICATION_LEVELS)}
+
+    def sort_key(c: Contact):
+        return (contact_role_rank(c), level_rank.get(c.source_verification_level, len(VERIFICATION_LEVELS)))
+
+    return sorted(contacts, key=sort_key)[0]
 
 
 def schedule_recheck(session: Session, *, organization: Organization, reason: str,

@@ -11,3 +11,4 @@ data/*.db-journal
 .env
 *.egg-info/
 qa_report_output.txt
+data/sheets_export_preview.csv
