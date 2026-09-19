@@ -1,0 +1,424 @@
+[
+  {
+    "organization": {
+      "name": "SebastianStrong Foundation",
+      "website": "https://www.sebastianstrong.org",
+      "city": "Miami Springs",
+      "state": "FL",
+      "zip": "33266",
+      "phone": "305-335-0894",
+      "organization_type": "childhood_cancer_nonprofit"
+    },
+    "event": {
+      "name": "Discovering Hope Gala & Silent Auction",
+      "date": "2026-11-07",
+      "state": "FL",
+      "event_type": "gala",
+      "description": "Annual gala and silent auction supporting childhood cancer research, benefiting SebastianStrong Foundation's My Childhood Cancer Navigator Program. Exact venue city not confirmed from available public sources.",
+      "event_url": "https://www.sebastianstrong.org/events/discoveringhopegala2026/",
+      "silent_auction": "YES",
+      "live_auction": "UNKNOWN",
+      "gala": "YES",
+      "discovery_source": "web_search: \"silent auction\" gala Florida 2026 nonprofit fundraiser"
+    },
+    "contacts": [
+      {
+        "first_name": "Oscar",
+        "last_name": "Ortiz",
+        "title": "Executive Director",
+        "email": "oscar@sebastianstrong.org",
+        "email_type": "VERIFIED_PUBLIC",
+        "phone": "305-335-0894",
+        "contact_page_url": "https://www.sebastianstrong.org/contacts/",
+        "email_source_url": "https://www.sebastianstrong.org/contacts/",
+        "contact_source_url": "https://www.sebastianstrong.org/contacts/"
+      }
+    ],
+    "sources": [
+      {"url": "https://www.sebastianstrong.org/events/discoveringhopegala2026/", "entity_type": "event", "purpose": "event_details"},
+      {"url": "https://www.sebastianstrong.org/contacts/", "entity_type": "organization", "purpose": "contact_info"}
+    ]
+  },
+  {
+    "organization": {
+      "name": "Joe DiMaggio Children's Hospital Foundation",
+      "website": "https://www.jdch.com",
+      "city": "Hollywood",
+      "state": "FL",
+      "organization_type": "hospital_foundation"
+    },
+    "event": {
+      "name": "The Red Gala",
+      "date": "2026-10-24",
+      "venue": "Pier Sixty-Six",
+      "city": "Fort Lauderdale",
+      "state": "FL",
+      "event_type": "gala",
+      "description": "Annual gala fundraiser benefiting Joe DiMaggio Children's Hospital Foundation's cardiac program, featuring the Goo Goo Dolls, presented by Robins & Morton.",
+      "event_url": "https://www.jdch.com/give-back/foundation-events/the-red-gala",
+      "gala": "YES",
+      "sponsors": "YES",
+      "silent_auction": "UNKNOWN",
+      "live_auction": "UNKNOWN",
+      "discovery_source": "web_search: \"annual gala\" nonprofit Miami 2026 auction"
+    },
+    "contacts": [
+      {
+        "first_name": "Abbie",
+        "last_name": "Beltz",
+        "title": "Manager of Special Events",
+        "email": "ABeltz@mhs.net",
+        "email_type": "VERIFIED_PUBLIC",
+        "phone": "954-265-7224",
+        "contact_page_url": "https://www.jdch.com/give-back/foundation-events/the-red-gala",
+        "email_source_url": "https://www.jdch.com/give-back/foundation-events/the-red-gala",
+        "contact_source_url": "https://www.jdch.com/give-back/foundation-events/the-red-gala"
+      }
+    ],
+    "sources": [
+      {"url": "https://www.jdch.com/give-back/foundation-events/the-red-gala", "entity_type": "event", "purpose": "event_details"},
+      {"url": "https://www.jdch.com/give-back/foundation-events/the-red-gala", "entity_type": "organization", "purpose": "contact_info"}
+    ]
+  },
+  {
+    "organization": {
+      "name": "Keep Tampa Bay Beautiful",
+      "website": "https://www.keeptampabaybeautiful.org",
+      "city": "Tampa",
+      "state": "FL",
+      "phone": "813-221-8733",
+      "organization_type": "environmental_nonprofit"
+    },
+    "event": {
+      "name": "Tropical Nights",
+      "date": "2026-10-16",
+      "venue": "TPepin Hospitality Centre",
+      "city": "Tampa",
+      "state": "FL",
+      "event_type": "gala",
+      "description": "Keep Tampa Bay Beautiful's premier fundraising gala featuring a silent auction, live auction, and raffles.",
+      "event_url": "https://www.keeptampabaybeautiful.org/tropicalnights",
+      "silent_auction": "YES",
+      "live_auction": "YES",
+      "raffle": "YES",
+      "gala": "YES",
+      "discovery_source": "web_search: \"annual gala\" nonprofit Tampa 2026 auction"
+    },
+    "contacts": [
+      {
+        "first_name": "Kristina",
+        "last_name": "Moreta",
+        "title": "Executive Director",
+        "email_type": "NOT_FOUND",
+        "contact_page_url": "https://www.keeptampabaybeautiful.org/team",
+        "contact_source_url": "https://www.keeptampabaybeautiful.org/team"
+      },
+      {
+        "title": "General Inquiries",
+        "email": "info@keeptbb.org",
+        "email_type": "GENERAL_ORGANIZATION",
+        "phone": "813-221-8733",
+        "contact_page_url": "https://www.keeptampabaybeautiful.org/contact",
+        "email_source_url": "https://www.keeptampabaybeautiful.org/contact",
+        "contact_source_url": "https://www.keeptampabaybeautiful.org/contact"
+      }
+    ],
+    "sources": [
+      {"url": "https://www.keeptampabaybeautiful.org/tropicalnights", "entity_type": "event", "purpose": "event_details"},
+      {"url": "https://www.keeptampabaybeautiful.org/team", "entity_type": "organization", "purpose": "contact_name"},
+      {"url": "https://www.keeptampabaybeautiful.org/contact", "entity_type": "organization", "purpose": "email"}
+    ]
+  },
+  {
+    "organization": {
+      "name": "Senior Resource Association",
+      "website": "https://www.seniorresourceassociation.org",
+      "address": "694 14th Street",
+      "city": "Vero Beach",
+      "state": "FL",
+      "zip": "32960",
+      "phone": "772-569-0760",
+      "organization_type": "senior_services_nonprofit"
+    },
+    "event": {
+      "name": "11th Annual Charity Pro-Am Golf Tournament",
+      "date": "2027-01-11",
+      "venue": "Riomar Country Club",
+      "city": "Vero Beach",
+      "state": "FL",
+      "event_type": "golf_tournament",
+      "description": "Charity Pro-Am golf tournament benefiting Senior Resource Association's senior services programs in Indian River County.",
+      "event_url": "https://www.seniorresourceassociation.org/pro-golf-tournament/",
+      "golf_tournament": "YES",
+      "silent_auction": "UNKNOWN",
+      "live_auction": "UNKNOWN",
+      "discovery_source": "web_search: \"charity golf tournament\" Florida 2026 fundraiser"
+    },
+    "contacts": [
+      {
+        "first_name": "Angela",
+        "last_name": "Bosman",
+        "title": "Marketing and Events Director",
+        "email": "events@sramail.org",
+        "email_type": "GENERAL_ORGANIZATION",
+        "phone": "772-569-0760 ext 119",
+        "contact_page_url": "https://www.seniorresourceassociation.org/pro-golf-tournament/",
+        "email_source_url": "https://www.seniorresourceassociation.org/pro-golf-tournament/",
+        "contact_source_url": "https://www.seniorresourceassociation.org/pro-golf-tournament/"
+      }
+    ],
+    "sources": [
+      {"url": "https://www.seniorresourceassociation.org/pro-golf-tournament/", "entity_type": "event", "purpose": "event_details"},
+      {"url": "https://www.seniorresourceassociation.org/pro-golf-tournament/", "entity_type": "organization", "purpose": "contact_info"}
+    ]
+  },
+  {
+    "organization": {
+      "name": "Sarasota Memorial Healthcare Foundation",
+      "website": "https://smhf.org",
+      "city": "Sarasota",
+      "state": "FL",
+      "organization_type": "hospital_foundation"
+    },
+    "event": {
+      "name": "The Hospital Gala",
+      "date": "2027-01-09",
+      "venue": "The Ritz-Carlton, Sarasota",
+      "city": "Sarasota",
+      "state": "FL",
+      "event_type": "gala",
+      "description": "Sarasota Memorial Healthcare Foundation's annual black-tie gala, its largest annual fundraiser supporting Sarasota Memorial Hospital.",
+      "event_url": "https://smhf.org/event/the-hospital-gala/",
+      "gala": "YES",
+      "silent_auction": "UNKNOWN",
+      "live_auction": "UNKNOWN",
+      "discovery_source": "web_search: \"hospital foundation gala\" Florida 2026"
+    },
+    "contacts": [
+      {
+        "first_name": "Rachael",
+        "last_name": "Fisk",
+        "title": "Donor Relations Manager",
+        "email": "rachael-fisk@smh.com",
+        "email_type": "VERIFIED_PUBLIC",
+        "phone": "616-648-6258",
+        "contact_page_url": "https://smhf.org/event/the-hospital-gala/",
+        "email_source_url": "https://smhf.org/event/the-hospital-gala/",
+        "contact_source_url": "https://smhf.org/event/the-hospital-gala/"
+      }
+    ],
+    "sources": [
+      {"url": "https://smhf.org/event/the-hospital-gala/", "entity_type": "event", "purpose": "event_details"},
+      {"url": "https://smhf.org/event/the-hospital-gala/", "entity_type": "organization", "purpose": "contact_info"}
+    ]
+  },
+  {
+    "organization": {
+      "name": "Florida Cancer Specialists Foundation",
+      "website": "https://fcsf.org",
+      "address": "5985 Silver Falls Run, Suite 210",
+      "city": "Bradenton",
+      "state": "FL",
+      "zip": "34211",
+      "phone": "941-677-7181",
+      "organization_type": "healthcare_foundation"
+    },
+    "event": {
+      "name": "The Lotus Gala",
+      "date": "2026-10-03",
+      "venue": "Armature Works",
+      "city": "Tampa",
+      "state": "FL",
+      "event_type": "gala",
+      "description": "Annual gala benefiting Florida Cancer Specialists Foundation's support programs for cancer patients across Florida.",
+      "event_url": "https://fcsf.org/fcsf-events/the-lotus-gala/",
+      "gala": "YES",
+      "silent_auction": "UNKNOWN",
+      "live_auction": "UNKNOWN",
+      "discovery_source": "web_search: \"annual gala\" nonprofit Tampa 2026 auction"
+    },
+    "contacts": [
+      {
+        "first_name": "Lynn",
+        "last_name": "Rasys",
+        "title": "Executive Director",
+        "email": "LRasys@FLCancer.com",
+        "email_type": "VERIFIED_PUBLIC",
+        "phone": "941-677-7184",
+        "contact_page_url": "https://fcsf.org/about/staff/",
+        "email_source_url": "https://fcsf.org/about/staff/",
+        "contact_source_url": "https://fcsf.org/about/staff/"
+      }
+    ],
+    "sources": [
+      {"url": "https://fcsf.org/fcsf-events/the-lotus-gala/", "entity_type": "event", "purpose": "event_details"},
+      {"url": "https://fcsf.org/about/staff/", "entity_type": "organization", "purpose": "contact_info"}
+    ]
+  },
+  {
+    "organization": {
+      "name": "Baptist Health Foundation",
+      "website": "https://baptisthealth.net/baptist-health-foundation",
+      "city": "Coral Gables",
+      "state": "FL",
+      "organization_type": "hospital_foundation"
+    },
+    "event": {
+      "name": "The Grand Gala",
+      "date": "2026-10-24",
+      "venue": "Miami Beach Convention Center",
+      "city": "Miami Beach",
+      "state": "FL",
+      "event_type": "gala",
+      "description": "Baptist Health Foundation's largest annual fundraising gala, supporting hospitals, institutes, and programs from the Florida Keys to Palm Beach.",
+      "event_url": "https://baptisthealth.net/baptist-health-foundation/events",
+      "gala": "YES",
+      "silent_auction": "UNKNOWN",
+      "live_auction": "UNKNOWN",
+      "discovery_source": "web_search: \"annual gala\" nonprofit Miami 2026 auction"
+    },
+    "contacts": [
+      {
+        "first_name": "Alex",
+        "last_name": "Villoch",
+        "title": "CEO, Baptist Health Foundation",
+        "email_type": "NOT_FOUND",
+        "contact_page_url": "https://baptisthealth.net/baptist-health-foundation/about-us/leadership",
+        "contact_source_url": "https://baptisthealth.net/baptist-health-foundation/about-us/leadership"
+      },
+      {
+        "first_name": "Anne Marie",
+        "title": "Grand Gala Event Contact",
+        "email": "AnneMarieB@BaptistHealth.net",
+        "email_type": "VERIFIED_PUBLIC",
+        "contact_page_url": "https://southfloridahospitalnews.com/baptist-health-foundation-celebrates-accomplishments-and-philanthropic-support-at-the-grand-gala-2025/",
+        "email_source_url": "https://southfloridahospitalnews.com/baptist-health-foundation-celebrates-accomplishments-and-philanthropic-support-at-the-grand-gala-2025/",
+        "contact_source_url": "https://southfloridahospitalnews.com/baptist-health-foundation-celebrates-accomplishments-and-philanthropic-support-at-the-grand-gala-2025/"
+      }
+    ],
+    "sources": [
+      {"url": "https://baptisthealth.net/baptist-health-foundation/events", "entity_type": "event", "purpose": "event_details"},
+      {"url": "https://baptisthealth.net/baptist-health-foundation/about-us/leadership", "entity_type": "organization", "purpose": "contact_name"},
+      {"url": "https://southfloridahospitalnews.com/baptist-health-foundation-celebrates-accomplishments-and-philanthropic-support-at-the-grand-gala-2025/", "entity_type": "organization", "purpose": "email"}
+    ]
+  },
+  {
+    "organization": {
+      "name": "Angel Foundation Florida",
+      "website": "https://angelfoundationfl.com",
+      "city": "Riverview",
+      "state": "FL",
+      "phone": "813-689-6889",
+      "organization_type": "patient_support_nonprofit"
+    },
+    "event": {
+      "name": "20th Annual Evening of Hope Gala",
+      "date": "2026-10-09",
+      "venue": "The Regent",
+      "address": "6437 Watson Rd.",
+      "city": "Riverview",
+      "state": "FL",
+      "event_type": "gala",
+      "description": "20th annual gala benefiting Angel Foundation Florida, supporting local families facing life-threatening illnesses, featuring dinner, live entertainment, and silent and live auctions.",
+      "event_url": "https://angelfoundationfl.com/evening-of-hope-gala/",
+      "gala": "YES",
+      "silent_auction": "YES",
+      "live_auction": "YES",
+      "discovery_source": "web_search: church fundraiser gala OR scholarship benefit dinner Florida 2026 auction"
+    },
+    "contacts": [
+      {
+        "title": "General Inquiries",
+        "email": "info@angelfoundationfl.com",
+        "email_type": "GENERAL_ORGANIZATION",
+        "phone": "813-689-6889",
+        "contact_page_url": "https://angelfoundationfl.com/evening-of-hope-gala/",
+        "email_source_url": "https://angelfoundationfl.com/evening-of-hope-gala/",
+        "contact_source_url": "https://angelfoundationfl.com/evening-of-hope-gala/"
+      }
+    ],
+    "sources": [
+      {"url": "https://angelfoundationfl.com/evening-of-hope-gala/", "entity_type": "event", "purpose": "event_details"},
+      {"url": "https://angelfoundationfl.com/evening-of-hope-gala/", "entity_type": "organization", "purpose": "contact_info"}
+    ]
+  },
+  {
+    "organization": {
+      "name": "Foundation for Foster Children",
+      "website": "https://foundationforfosterchildren.org",
+      "address": "2265 Lee Rd Suite 203",
+      "city": "Winter Park",
+      "state": "FL",
+      "zip": "32789",
+      "phone": "407-422-4615",
+      "organization_type": "child_welfare_nonprofit"
+    },
+    "event": {
+      "name": "Championship for Children Golf Tournament",
+      "date": "2026-11-02",
+      "venue": "Country Club of Orlando",
+      "city": "Orlando",
+      "state": "FL",
+      "event_type": "golf_tournament",
+      "description": "Annual charity golf tournament benefiting Foundation for Foster Children, presented by Panera Bread, supporting children and youth in foster care.",
+      "event_url": "https://foundationforfosterchildren.org/championship-for-children-2026/",
+      "golf_tournament": "YES",
+      "sponsors": "YES",
+      "silent_auction": "UNKNOWN",
+      "live_auction": "UNKNOWN",
+      "discovery_source": "web_search: \"golf tournament\" fundraiser Orlando Florida 2026 charity"
+    },
+    "contacts": [
+      {
+        "title": "General Inquiries",
+        "email": "info@foundationforfosterchildren.org",
+        "email_type": "GENERAL_ORGANIZATION",
+        "phone": "407-422-4615",
+        "contact_page_url": "https://foundationforfosterchildren.org/contact/",
+        "email_source_url": "https://foundationforfosterchildren.org/contact/",
+        "contact_source_url": "https://foundationforfosterchildren.org/contact/"
+      }
+    ],
+    "sources": [
+      {"url": "https://foundationforfosterchildren.org/championship-for-children-2026/", "entity_type": "event", "purpose": "event_details"},
+      {"url": "https://foundationforfosterchildren.org/contact/", "entity_type": "organization", "purpose": "contact_info"}
+    ]
+  },
+  {
+    "organization": {
+      "name": "NAAIA South Florida",
+      "website": "https://southfl.naaia.org",
+      "state": "FL",
+      "organization_type": "professional_association_scholarship"
+    },
+    "event": {
+      "name": "2026 NAAIA South Florida Annual Scholarship Gala",
+      "date": "2026-12-12",
+      "venue": "Hilton Fort Lauderdale Marina",
+      "city": "Fort Lauderdale",
+      "state": "FL",
+      "event_type": "scholarship_gala",
+      "description": "Annual scholarship gala themed 'Elevate the Future: Empowering Tomorrow'; 100% of net proceeds benefit the Florida Insurance Scholarship Program.",
+      "event_url": "https://www.eventbrite.com/e/2026-naaia-south-florida-annual-scholarship-gala-tickets-1991113339598",
+      "ticket_url": "https://www.eventbrite.com/e/2026-naaia-south-florida-annual-scholarship-gala-tickets-1991113339598",
+      "gala": "YES",
+      "silent_auction": "UNKNOWN",
+      "live_auction": "UNKNOWN",
+      "discovery_source": "eventbrite_discovery: NAAIA South Florida scholarship gala"
+    },
+    "contacts": [
+      {
+        "title": "General Inquiries",
+        "email": "Info@naaiasouthflorida.org",
+        "email_type": "GENERAL_ORGANIZATION",
+        "contact_page_url": "https://southfl.naaia.org/our-events/",
+        "email_source_url": "https://naaiasouthflorida.org/about",
+        "contact_source_url": "https://southfl.naaia.org/our-events/"
+      }
+    ],
+    "sources": [
+      {"url": "https://www.eventbrite.com/e/2026-naaia-south-florida-annual-scholarship-gala-tickets-1991113339598", "entity_type": "event", "purpose": "event_details"},
+      {"url": "https://naaiasouthflorida.org/about", "entity_type": "organization", "purpose": "email"}
+    ]
+  }
+]

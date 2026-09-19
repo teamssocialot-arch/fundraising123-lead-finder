@@ -1,0 +1,42 @@
+:root {
+  --border: #ddd;
+  --bg-alt: #f7f7f8;
+  --text-muted: #666;
+  --accent: #2a5d34;
+}
+* { box-sizing: border-box; }
+body { font-family: -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; margin: 0; color: #1a1a1a; }
+.topbar { padding: 14px 24px; border-bottom: 1px solid var(--border); background: var(--bg-alt); }
+.brand { font-weight: 700; text-decoration: none; color: var(--accent); font-size: 1.1rem; }
+main { padding: 20px 24px; max-width: 1400px; margin: 0 auto; }
+
+.stats-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 10px; margin-bottom: 20px; }
+.stat-card { border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; background: #fff; }
+.stat-card .value { font-size: 1.5rem; font-weight: 700; }
+.stat-card .label { font-size: 0.8rem; color: var(--text-muted); }
+
+.filters { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; padding: 12px; background: var(--bg-alt); border-radius: 8px; }
+.filters select, .filters input { padding: 5px 8px; border: 1px solid var(--border); border-radius: 4px; }
+.filters button { padding: 6px 14px; border: none; background: var(--accent); color: #fff; border-radius: 4px; cursor: pointer; }
+
+table { width: 100%; border-collapse: collapse; background: #fff; }
+th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border); font-size: 0.88rem; vertical-align: top; }
+th { background: var(--bg-alt); position: sticky; top: 0; }
+tr:hover { background: #fafafa; }
+.badge { display: inline-block; padding: 1px 6px; border-radius: 10px; font-size: 0.72rem; font-weight: 600; }
+.badge-yes { background: #d7f0dc; color: #1c5e2b; }
+.badge-no { background: #eee; color: #888; }
+.badge-unknown { background: #fff3cd; color: #8a6300; }
+.badge-verified { background: #d7f0dc; color: #1c5e2b; }
+.badge-partial { background: #fff3cd; color: #8a6300; }
+.badge-review { background: #fbdada; color: #a3242c; }
+
+.detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+.detail-section { border: 1px solid var(--border); border-radius: 8px; padding: 16px; margin-bottom: 16px; background: #fff; }
+.detail-section h3 { margin-top: 0; }
+.field { margin-bottom: 8px; }
+.field .k { color: var(--text-muted); font-size: 0.8rem; }
+.field .v { font-size: 0.95rem; }
+.source-link { font-size: 0.78rem; word-break: break-all; }
+a { color: var(--accent); }
+.export-link { float: right; }

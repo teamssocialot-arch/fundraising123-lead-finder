@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block content %}
+<p><a href="/">&larr; Back to dashboard</a></p>
+<h2>{{ event.event_name }}</h2>
+
+<div class="detail-grid">
+  <div class="detail-section">
+    <h3>Organization</h3>
+    <div class="field"><div class="k">Name</div><div class="v">{{ org.organization_name }}</div></div>
+    <div class="field"><div class="k">Website</div><div class="v"><a href="{{ org.website }}">{{ org.website or "-" }}</a></div></div>
+    <div class="field"><div class="k">Type</div><div class="v">{{ org.organization_type or "-" }}</div></div>
+    <div class="field"><div class="k">Address</div><div class="v">{{ org.address or "-" }}, {{ org.city }}, {{ org.state }} {{ org.zip or "" }}</div></div>
+    <div class="field"><div class="k">Phone</div><div class="v">{{ org.phone or "NOT FOUND" }}</div></div>
+  </div>
+
+  <div class="detail-section">
+    <h3>Event</h3>
+    <div class="field"><div class="k">Date</div><div class="v">{{ event.event_date or "UNKNOWN" }} ({{ event.timing_bucket or "n/a" }}, {{ event.days_until_event if event.days_until_event is not none else "n/a" }} days)</div></div>
+    <div class="field"><div class="k">Venue / Location</div><div class="v">{{ event.venue or "-" }} — {{ event.city }}, {{ event.state }} {{ event.zip or "" }}</div></div>
+    <div class="field"><div class="k">Event type</div><div class="v">{{ event.event_type or "-" }}</div></div>
+    <div class="field"><div class="k">Event URL</div><div class="v"><a href="{{ event.event_url }}" class="source-link">{{ event.event_url or "-" }}</a></div></div>
+    <div class="field"><div class="k">Ticket URL</div><div class="v"><a href="{{ event.ticket_url }}" class="source-link">{{ event.ticket_url or "-" }}</a></div></div>
+    <div class="field"><div class="k">Description</div><div class="v">{{ event.description or "-" }}</div></div>
+  </div>
+
+  <div class="detail-section">
+    <h3>Event Characteristics</h3>
+    <div class="field"><span class="badge badge-{{ event.silent_auction|lower }}">Silent Auction: {{ event.silent_auction }}</span></div>
+    <div class="field"><span class="badge badge-{{ event.live_auction|lower }}">Live Auction: {{ event.live_auction }}</span></div>
+    <div class="field"><span class="badge badge-{{ event.raffle|lower }}">Raffle: {{ event.raffle }}</span></div>
+    <div class="field"><span class="badge badge-{{ event.gala|lower }}">Gala: {{ event.gala }}</span></div>
+    <div class="field"><span class="badge badge-{{ event.golf_tournament|lower }}">Golf Tournament: {{ event.golf_tournament }}</span></div>
+    <div class="field"><span class="badge badge-{{ event.casino_night|lower }}">Casino Night: {{ event.casino_night }}</span></div>
+    <div class="field"><span class="badge badge-{{ event.travel_packages|lower }}">Travel Packages Mentioned: {{ event.travel_packages }}</span></div>
+    <div class="field"><span class="badge badge-{{ event.sponsors|lower }}">Sponsors Mentioned: {{ event.sponsors }}</span></div>
+    <div class="field"><div class="k">Recurring event</div><div class="v">{{ "YES" if event.recurring_event else "NO" }} — typical month: {{ event.typical_month or "n/a" }}, next event: {{ event.next_event or "NOT ANNOUNCED" }}</div></div>
+  </div>
+
+  <div class="detail-section">
+    <h3>Contacts</h3>
+    {% for c in contacts %}
+      <div class="field"><div class="k">Name / Title</div><div class="v">{{ c.first_name or "" }} {{ c.last_name or "" }} — {{ c.title or "n/a" }}</div></div>
+      <div class="field"><div class="k">Email ({{ c.email_type }})</div><div class="v">{{ c.email or "NOT FOUND" }}</div></div>
+      <div class="field"><div class="k">Phone</div><div class="v">{{ c.phone or "NOT FOUND" }}</div></div>
+      <div class="field"><div class="k">Contact source URL</div><div class="v"><a class="source-link" href="{{ c.contact_source_url }}">{{ c.contact_source_url or "-" }}</a></div></div>
+      <div class="field"><div class="k">Email source URL</div><div class="v"><a class="source-link" href="{{ c.email_source_url }}">{{ c.email_source_url or "-" }}</a></div></div>
+      <div class="field"><div class="k">Verification status</div><div class="v">{{ c.verification_status }}</div></div>
+      <hr>
+    {% else %}
+      <p>No contact found yet.</p>
+    {% endfor %}
+  </div>
+</div>
+
+<div class="detail-section">
+  <h3>Status</h3>
+  <div class="field"><div class="k">Verification status</div><div class="v">{{ event.verification_status }}</div></div>
+  <div class="field"><div class="k">Lead status</div><div class="v">{{ event.lead_status }}</div></div>
+  <div class="field"><div class="k">Discovery source</div><div class="v">{{ event.discovery_source or "-" }}</div></div>
+  <div class="field"><div class="k">Notes</div><div class="v">{{ event.notes or "-" }}</div></div>
+</div>
+
+{% if other_events %}
+<div class="detail-section">
+  <h3>Other events from this organization</h3>
+  <ul>
+    {% for oe in other_events %}
+      <li><a href="/leads/{{ oe.event_id }}">{{ oe.event_name }}</a> — {{ oe.event_date or "UNKNOWN" }}</li>
+    {% endfor %}
+  </ul>
+</div>
+{% endif %}
+{% endblock %}

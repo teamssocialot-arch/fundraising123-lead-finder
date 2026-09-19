@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="stats-grid">
+  <div class="stat-card"><div class="value">{{ stats.total_organizations }}</div><div class="label">Organizations</div></div>
+  <div class="stat-card"><div class="value">{{ stats.total_events }}</div><div class="label">Total Events</div></div>
+  <div class="stat-card"><div class="value">{{ stats.upcoming_events }}</div><div class="label">Upcoming Events</div></div>
+  <div class="stat-card"><div class="value">{{ stats.silent_auctions }}</div><div class="label">Silent Auctions</div></div>
+  <div class="stat-card"><div class="value">{{ stats.live_auctions }}</div><div class="label">Live Auctions</div></div>
+  <div class="stat-card"><div class="value">{{ stats.galas }}</div><div class="label">Galas</div></div>
+  <div class="stat-card"><div class="value">{{ stats.golf_fundraisers }}</div><div class="label">Golf Fundraisers</div></div>
+  <div class="stat-card"><div class="value">{{ stats.verified_emails }}</div><div class="label">Verified Emails</div></div>
+  <div class="stat-card"><div class="value">{{ stats.general_emails }}</div><div class="label">General Emails</div></div>
+  <div class="stat-card"><div class="value">{{ stats.contacts_missing_email }}</div><div class="label">Contacts Missing Email</div></div>
+</div>
+
+{% if state_counts %}
+<div class="detail-section">
+  <h3>Events by State</h3>
+  {% for state, cnt in state_counts.items() %}<span class="badge badge-no">{{ state }}: {{ cnt }}</span> {% endfor %}
+</div>
+{% endif %}
+
+<form class="filters" method="get">
+  <input type="text" name="q" placeholder="Search org/event/city..." value="{{ filters.q or '' }}">
+  <input type="text" name="state" placeholder="State (FL)" value="{{ filters.state or '' }}" maxlength="2">
+  <input type="text" name="city" placeholder="City" value="{{ filters.city or '' }}">
+  <select name="silent_auction">
+    <option value="">Silent Auction: any</option>
+    <option value="YES" {% if filters.silent_auction == 'YES' %}selected{% endif %}>YES</option>
+    <option value="NO" {% if filters.silent_auction == 'NO' %}selected{% endif %}>NO</option>
+    <option value="UNKNOWN" {% if filters.silent_auction == 'UNKNOWN' %}selected{% endif %}>UNKNOWN</option>
+  </select>
+  <select name="live_auction">
+    <option value="">Live Auction: any</option>
+    <option value="YES" {% if filters.live_auction == 'YES' %}selected{% endif %}>YES</option>
+    <option value="NO" {% if filters.live_auction == 'NO' %}selected{% endif %}>NO</option>
+  </select>
+  <select name="gala">
+    <option value="">Gala: any</option>
+    <option value="YES" {% if filters.gala == 'YES' %}selected{% endif %}>YES</option>
+    <option value="NO" {% if filters.gala == 'NO' %}selected{% endif %}>NO</option>
+  </select>
+  <select name="golf_tournament">
+    <option value="">Golf: any</option>
+    <option value="YES" {% if filters.golf_tournament == 'YES' %}selected{% endif %}>YES</option>
+    <option value="NO" {% if filters.golf_tournament == 'NO' %}selected{% endif %}>NO</option>
+  </select>
+  <select name="verification_status">
+    <option value="">Verification: any</option>
+    <option value="VERIFIED" {% if filters.verification_status == 'VERIFIED' %}selected{% endif %}>VERIFIED</option>
+    <option value="PARTIALLY_VERIFIED" {% if filters.verification_status == 'PARTIALLY_VERIFIED' %}selected{% endif %}>PARTIALLY_VERIFIED</option>
+    <option value="NEEDS_REVIEW" {% if filters.verification_status == 'NEEDS_REVIEW' %}selected{% endif %}>NEEDS_REVIEW</option>
+  </select>
+  <select name="timing_bucket">
+    <option value="">Timing: any</option>
+    {% for b in ["0-30 days","31-60 days","61-90 days","91-180 days","181-365 days","365+ days"] %}
+    <option value="{{ b }}" {% if filters.timing_bucket == b %}selected{% endif %}>{{ b }}</option>
+    {% endfor %}
+  </select>
+  <select name="email_found">
+    <option value="">Email: any</option>
+    <option value="true" {% if filters.email_found == 'true' %}selected{% endif %}>Has email</option>
+  </select>
+  <button type="submit">Filter</button>
+  <a class="export-link" href="/export.csv?{{ query_string }}">Export CSV</a>
+</form>
+
+<table>
+  <thead>
+    <tr>
+      <th>Event</th><th>Organization</th><th>Date</th><th>Timing</th><th>Location</th>
+      <th>Type</th><th>Silent</th><th>Live</th><th>Gala</th><th>Golf</th>
+      <th>Contact</th><th>Email</th><th>Verification</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for lead in leads %}
+    {% set e = lead.event %}{% set org = lead.org %}{% set c = lead.contact %}
+    <tr>
+      <td><a href="/leads/{{ e.event_id }}">{{ e.event_name }}</a></td>
+      <td>{{ org.organization_name }}</td>
+      <td>{{ e.event_date or "UNKNOWN" }}</td>
+      <td>{{ e.timing_bucket or "-" }}</td>
+      <td>{{ e.city }}, {{ e.state }}</td>
+      <td>{{ e.event_type or "-" }}</td>
+      <td><span class="badge badge-{{ e.silent_auction|lower }}">{{ e.silent_auction }}</span></td>
+      <td><span class="badge badge-{{ e.live_auction|lower }}">{{ e.live_auction }}</span></td>
+      <td><span class="badge badge-{{ e.gala|lower }}">{{ e.gala }}</span></td>
+      <td><span class="badge badge-{{ e.golf_tournament|lower }}">{{ e.golf_tournament }}</span></td>
+      <td>{% if c and c.first_name %}{{ c.first_name }} {{ c.last_name }}{% else %}-{% endif %}</td>
+      <td>{% if c and c.email %}{{ c.email }}{% else %}NOT FOUND{% endif %}</td>
+      <td><span class="badge badge-{{ 'verified' if e.verification_status == 'VERIFIED' else ('partial' if e.verification_status == 'PARTIALLY_VERIFIED' else 'review') }}">{{ e.verification_status }}</span></td>
+    </tr>
+    {% else %}
+    <tr><td colspan="13">No leads match these filters yet.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+{% endblock %}
