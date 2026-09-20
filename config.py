@@ -4,11 +4,22 @@ import os
 # Swap to a postgresql:// URL later without any model/query changes.
 DATABASE_URL = os.environ.get("DATABASE_URL", "sqlite:///./data/fundraising123.db")
 
-# Search API — NOT enabled by default. Phase 1 validation uses manual/assisted
-# web research (see scripts/load_leads.py) specifically to avoid incurring any
-# paid API charges before the user approves enabling one.
-GOOGLE_CSE_API_KEY = os.environ.get("GOOGLE_CSE_API_KEY")  # unset = search API disabled
-GOOGLE_CSE_CX = os.environ.get("GOOGLE_CSE_CX")
+# Search provider config -- Phase B. The key is read ONLY from the environment
+# (set as a GitHub Actions secret; never hardcoded or committed). Leaving it
+# unset disables Tavily entirely -- scripts/verify_with_tavily.py no-ops with
+# a clear message rather than failing, exactly like the Google Sheets export's
+# dry-run behavior when credentials aren't configured yet.
+TAVILY_API_KEY = os.environ.get("TAVILY_API_KEY")
+TAVILY_API_URL = "https://api.tavily.com/search"
+# Hard ceiling enforced by app.search.tavily.TavilyProvider itself -- it refuses
+# to place a call that would exceed this, regardless of what the caller asks for.
+TAVILY_MAX_CREDITS_PER_RUN = int(os.environ.get("TAVILY_MAX_CREDITS_PER_RUN", "100"))
+TAVILY_QUERIES_PER_LEAD = int(os.environ.get("TAVILY_QUERIES_PER_LEAD", "6"))
+TAVILY_MAX_RESULTS_PER_QUERY = int(os.environ.get("TAVILY_MAX_RESULTS_PER_QUERY", "3"))
+# Of the results returned per query, how many get a full live/archive fetch
+# attempt (keeps downstream fetch volume, and therefore run time, bounded --
+# every result still gets a cheap SEARCH_DISCOVERY evidence check regardless).
+TAVILY_RESULTS_TO_VERIFY_PER_QUERY = int(os.environ.get("TAVILY_RESULTS_TO_VERIFY_PER_QUERY", "1"))
 
 # Crawler politeness defaults (used by app/crawler/fetcher.py in later phases).
 MIN_SECONDS_BETWEEN_REQUESTS_PER_DOMAIN = float(os.environ.get("CRAWL_DELAY_SECONDS", "3.0"))
@@ -35,10 +46,14 @@ FUNDRAISER_URL_TYPES = (
 )
 
 EVIDENCE_SOURCE_TYPES = (
-    "LIVE_SOURCE",     # fetched directly from the still-live target page
-    "ARCHIVED_SOURCE", # fetched from a legitimate public archive (e.g. Wayback Machine) of the target page
-    "SEARCH_RESULT",   # a search-engine indexed snippet, underlying page not (successfully) fetched
-    "PUBLIC_RECORD",   # a public-record registry (e.g. ProPublica Nonprofit Explorer / IRS data) -- org identity only
+    "LIVE_SOURCE",      # fetched directly from the still-live target page
+    "ARCHIVED_SOURCE",  # fetched from a legitimate public archive (e.g. Wayback Machine) of the target page
+    "SEARCH_RESULT",    # a search-engine indexed snippet, underlying page not (successfully) fetched
+    "PUBLIC_RECORD",    # a public-record registry (e.g. ProPublica Nonprofit Explorer / IRS data) -- org identity only
+    "SEARCH_DISCOVERY", # a search PROVIDER (e.g. Tavily) surfaced this underlying URL/snippet. The provider
+                         # is not itself the source -- the underlying URL is. Two SEARCH_DISCOVERY rows from
+                         # the same provider pointing at the same normalized URL are NOT independent sources;
+                         # independence is judged the same way as everything else, by distinct normalized URLs.
 )
 
 # Ordered best-to-worst. A claim's level is COMPUTED from its Evidence rows

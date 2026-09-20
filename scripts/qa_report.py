@@ -1,8 +1,10 @@
 """Print a QA summary + results table for the current DB contents.
 
-If data/verification_log.json exists (written by scripts/verify_sources.py),
-also prints the inaccessible-URLs and conflicting-information sections from
-the most recent verification pass.
+If data/verification_log.json exists (written by scripts/verify_sources.py,
+Phase A), also prints the inaccessible-URLs and conflicting-information
+sections from the most recent verification pass. If data/tavily_log.json
+exists (written by scripts/verify_with_tavily.py, Phase B), also prints
+Tavily query/credit consumption and newly discovered contacts.
 """
 import json
 import sys
@@ -16,6 +18,7 @@ from app.models import Contact, Event, Evidence, Organization  # noqa: E402
 from config import VERIFICATION_LEVELS  # noqa: E402
 
 LOG_PATH = Path(__file__).resolve().parent.parent / "data" / "verification_log.json"
+TAVILY_LOG_PATH = Path(__file__).resolve().parent.parent / "data" / "tavily_log.json"
 
 
 def _level_counts(rows, level_attr="source_verification_level"):
@@ -49,6 +52,8 @@ def main():
     print(f"Needs review:            {count(lambda e: e.verification_status == 'NEEDS_REVIEW')}")
     print(f"Fundraiser URL found:    {count(lambda e: e.fundraiser_url and e.fundraiser_url != 'NOT_FOUND')}")
     print(f"Fundraiser URL NOT_FOUND (flagged for review): {count(lambda e: not e.fundraiser_url or e.fundraiser_url == 'NOT_FOUND')}")
+    named_contacts = sum(1 for c in contacts if c.first_name or c.last_name)
+    print(f"Named contacts (have a first/last name, any source): {named_contacts} of {len(contacts)} total contacts")
 
     print()
     print("-" * 100)
@@ -99,6 +104,33 @@ def main():
         print()
         print("(No verification_log.json found yet -- run scripts/verify_sources.py first "
               "to get real source-page verification results.)")
+
+    if TAVILY_LOG_PATH.exists():
+        tlog = json.loads(TAVILY_LOG_PATH.read_text())
+        print()
+        print("-" * 100)
+        print(f"LAST PHASE B (TAVILY) RUN: {tlog.get('run_at')} -- status: {tlog.get('status')}")
+        print("-" * 100)
+        if tlog.get("status") == "SKIPPED_NO_API_KEY":
+            print("Tavily was skipped: TAVILY_API_KEY was not set for this run. No calls made, no data changed.")
+        else:
+            print(f"Tavily queries run:              {tlog.get('queries_run', 0)}")
+            print(f"Tavily credits used:              {tlog.get('credits_used', 0)} / {tlog.get('credits_budget', 'n/a')}")
+            print(f"Queries skipped (over budget):    {tlog.get('queries_skipped_over_budget', 0)}")
+            print(f"Stopped early (budget exhausted): {tlog.get('stopped_early', False)}")
+            new_contacts = tlog.get("new_contacts_discovered", [])
+            print(f"New contacts discovered via Tavily: {len(new_contacts)}")
+            for nc in new_contacts:
+                print(f"  - {nc.get('name') or '(no name)'} / {nc.get('title') or 'n/a'} / "
+                      f"{nc.get('email') or 'no email'} -- {nc.get('organization')} "
+                      f"(source: {nc.get('source_url')})")
+            tconflicts = tlog.get("conflicts", [])
+            print(f"\nPhase B conflicts/needs-review items: {len(tconflicts)}")
+            for c in tconflicts:
+                print(f"  - {c}")
+    else:
+        print()
+        print("(No tavily_log.json found yet -- run scripts/verify_with_tavily.py to get Phase B results.)")
     print()
 
     print("=" * 100)

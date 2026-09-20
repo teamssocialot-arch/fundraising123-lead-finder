@@ -9,7 +9,13 @@ name: Verify Florida Stage 1 Sources
 # PHASE A: verification uses only free, no-API-key public sources (direct
 # fetch, Wayback Machine, ProPublica Nonprofit Explorer) -- no Google/Bing
 # search API, no scraping proxy, no anti-bot-bypass or contact-guessing
-# service of any kind. Nothing in this workflow requires a secret.
+# service of any kind. Nothing in Phase A requires a secret.
+#
+# PHASE B: adds Tavily as a search-discovery layer, still scoped to the same
+# 10 leads only. The API key comes solely from the TAVILY_API_KEY repository
+# secret below -- it is never hardcoded, never logged, and never committed.
+# If the secret isn't set, scripts/verify_with_tavily.py no-ops with a clear
+# message and makes no calls and no data changes.
 on:
   workflow_dispatch: {}
 
@@ -45,6 +51,15 @@ jobs:
       - name: Run real source-page verification (Florida only, robots.txt-respecting, rate-limited)
         run: python scripts/verify_sources.py
 
+      # TAVILY_API_KEY is read from this repo's Actions secret and mapped to
+      # an env var here -- it is never printed, echoed, or written to any
+      # committed file. If the secret is unset, this step no-ops (see the
+      # script's own SKIPPED_NO_API_KEY log message) rather than failing.
+      - name: Run Phase B search-discovery verification (Tavily, existing 10 leads only)
+        env:
+          TAVILY_API_KEY: ${{ secrets.TAVILY_API_KEY }}
+        run: python scripts/verify_with_tavily.py
+
       - name: Generate QA report
         run: python scripts/qa_report.py | tee qa_report_output.txt
 
@@ -61,14 +76,15 @@ jobs:
           path: |
             qa_report_output.txt
             data/verification_log.json
+            data/tavily_log.json
             data/sheets_export_preview.csv
           retention-days: 90
 
-      - name: Commit updated database and verification log back to the repo
+      - name: Commit updated database and verification logs back to the repo
         run: |
           git config user.name "fundraising123-lead-finder-bot"
           git config user.email "actions@users.noreply.github.com"
-          git add data/fundraising123.db data/verification_log.json
+          git add data/fundraising123.db data/verification_log.json data/tavily_log.json
           if git diff --cached --quiet; then
             echo "No changes to commit."
           else

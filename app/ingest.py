@@ -390,6 +390,23 @@ def add_evidence(session: Session, *, entity_type: str, entity_id: int, claim: s
                 "appear in the excerpt -- refusing to record (never guess or infer an email)"
             )
 
+    # Idempotent on EXACT repeats only (same entity/claim/URL/type/outcome) --
+    # e.g. the same underlying page surfacing across several different search
+    # queries. This never collapses genuinely conflicting findings (different
+    # `confirmed` values for the same source stay as separate rows).
+    normalized = normalize_url(source_url)
+    existing = (
+        session.query(Evidence)
+        .filter(
+            Evidence.entity_type == entity_type, Evidence.entity_id == entity_id, Evidence.claim == claim,
+            Evidence.source_url_normalized == normalized, Evidence.source_type == source_type,
+            Evidence.confirmed == confirmed,
+        )
+        .first()
+    )
+    if existing:
+        return existing
+
     evidence = Evidence(
         entity_type=entity_type,
         entity_id=entity_id,
