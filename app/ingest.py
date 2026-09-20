@@ -233,7 +233,9 @@ def add_contact(session: Session, *, organization: Organization, first_name: str
                  contact_page_url: str | None = None, email_source_url: str | None = None,
                  contact_source_url: str | None = None,
                  source_verification_level: str = "UNVERIFIED",
-                 email_verification_level: str | None = None) -> Contact:
+                 email_verification_level: str | None = None) -> tuple[Contact, bool]:
+    """Returns (contact, created) -- find-or-create like the organization/event
+    helpers, so re-running the loader never creates duplicate Contact rows."""
     if email and email_type == "NOT_FOUND":
         # An email value implies it was actually found somewhere -- classification bug if left NOT_FOUND.
         raise IngestError("email provided but email_type is NOT_FOUND")
@@ -256,6 +258,40 @@ def add_contact(session: Session, *, organization: Organization, first_name: str
         "PARTIALLY_VERIFIED" if (first_name or last_name) and contact_source_url else "NEEDS_REVIEW"
     )
 
+    # Dedup within this organization -- otherwise re-running the loader (as the
+    # GitHub Actions workflow does on every trigger) would create a fresh
+    # duplicate Contact row each time instead of updating the existing one.
+    org_contacts = session.query(Contact).filter(Contact.organization_id == organization.organization_id).all()
+    existing = None
+    if email:
+        existing = next((c for c in org_contacts if c.email and c.email.lower() == email.lower()), None)
+    if existing is None and (first_name or last_name):
+        target = normalize_org_name(f"{first_name or ''} {last_name or ''}")
+        existing = next(
+            (c for c in org_contacts
+             if (c.first_name or c.last_name) and normalize_org_name(f"{c.first_name or ''} {c.last_name or ''}") == target),
+            None,
+        )
+    if existing is None and not (first_name or last_name) and not email and title:
+        existing = next((c for c in org_contacts if not c.first_name and not c.last_name and c.title == title), None)
+
+    if existing:
+        # Backfill only -- never overwrite already-known data with less-specific info.
+        if not existing.email and email:
+            existing.email = email
+            existing.email_type = email_type
+            existing.email_source_url = email_source_url
+            existing.email_verification_level = email_verification_level
+        if not existing.title and title:
+            existing.title = title
+        if not existing.phone and phone:
+            existing.phone = phone
+        if not existing.contact_page_url and contact_page_url:
+            existing.contact_page_url = contact_page_url
+        if not existing.contact_source_url and contact_source_url:
+            existing.contact_source_url = contact_source_url
+        return existing, False
+
     contact = Contact(
         organization_id=organization.organization_id,
         first_name=first_name,
@@ -274,7 +310,7 @@ def add_contact(session: Session, *, organization: Organization, first_name: str
     )
     session.add(contact)
     session.flush()
-    return contact
+    return contact, True
 
 
 def upgrade_source_verification_level(entity, new_level: str, *, email_confirmed: bool = False) -> bool:

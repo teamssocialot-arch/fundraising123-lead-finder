@@ -38,6 +38,7 @@ def load_file(path: str):
         "events_created": 0,
         "events_deduped": 0,
         "contacts_created": 0,
+        "contacts_deduped": 0,
         "sources_recorded": 0,
     }
 
@@ -94,7 +95,7 @@ def load_file(path: str):
 
         first_contact = None
         for contact_data in contacts_data:
-            contact = add_contact(
+            contact, contact_created = add_contact(
                 session,
                 organization=org,
                 first_name=contact_data.get("first_name"),
@@ -109,7 +110,7 @@ def load_file(path: str):
                 source_verification_level=contact_data.get("source_verification_level", "UNVERIFIED"),
                 email_verification_level=contact_data.get("email_verification_level"),
             )
-            stats["contacts_created"] += 1
+            stats["contacts_created" if contact_created else "contacts_deduped"] += 1
             first_contact = first_contact or contact
 
         for src in sources:
